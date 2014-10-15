@@ -1,0 +1,71 @@
+Metadata-Version: 1.1
+Name: pyA20
+Version: 0.1.6
+Summary: Control GPIOs on OLinuXino-A20.
+Home-page: https://www.olimex.com/
+Author: Stanimir Petev
+Author-email: support@olimex.com
+License: MIT
+Description: This package provides class to control the GPIO on Olinuxino A20.
+        Current release does no support any peripheral functions.
+        
+        Example
+        =======
+        
+        Typical usage::
+            
+            #!/usr/bin/env python
+        
+            import A20_GPIO as GPIO
+            
+            x - connector name
+            y - pin number
+        
+            #init module
+            GPIO.init()
+            
+            #configure module
+            GPIO.setcfg(PINx_y, GPIO.OUTPUT)
+            GPIO.setcfg(PINx_y, GPIO.INPUT)
+                
+            #read the current GPIO configuration
+            config = GPIO.getcfg(PINx_y)
+            
+            #set GPIO high
+            GPIO.output(PINx_y, GPIO.HIGH)
+            
+            #set GPIO low
+            GPIO.output(PINx_y, GPIO.LOW)
+            
+            #read input
+            state = GPIO.input(PINx_y)
+            
+            #cleanup 
+            GPIO.cleanup()
+            
+        
+        Warning
+        =======
+        
+            Before using this tool it is HIGHLY RECOMENDED to check Olinuxino 
+            A20 schematic. 
+        
+        Changelog
+        ===================================
+            * pyA20 0.1.0 (2013-08-21)
+        	* Initial release
+            * pyA20 0.1.3 (2013-08-23)
+        	* Fixed wrong distribution uploaded
+            * pyA20 0.1.6 (2013-09-13)
+        	* changed pin GPIOs reference to PINx_y
+        
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Education
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Topic :: Home Automation
+Classifier: Topic :: Software Development :: Embedded Systems
