@@ -96,6 +96,7 @@ Builder.load_string("""
                         size_hint: 1, .07
                         range: 50, 105
                         value: 90
+			
                         on_value: root.SetServo2() 
                         orientation: 'horizontal'
                         pos_hint: {'center_x': 0.5, 'top':1}
@@ -145,8 +146,8 @@ Builder.load_string("""
                 id: cal_trackmove
                 step: 1
                 size_hint: 1, 1
-                range: 1, 100
-                value: 100
+                range: 1, 255
+                value: 255
                 orientation: 'horizontal'
             Label:
                 text: 'Tracks rotate factor'
@@ -257,11 +258,11 @@ class MainTabs(TabbedPanel):
 #            pilot.direction = "";
     def TracksActivate (self):
 	if (self.joy1.jy != 0 or self.joy1.jx != 0 ):
-          pilot.send ("TRACKS %0d %0d" % (self.joy1.jx*self.cal_trackmove.value,self.joy1.jy*self.cal_trackrotate.value))
+          pilot.send ("TRACKS %0d %0d" % (self.joy1.jx*self.cal_trackmove.value,self.joy1.jy*self.cal_trackmove.value))
 
     def TracksDeactivate (self):
-	if (self.joy1.jy == 0 and self.joy1.jx == 0 ):
-          pilot.send ("TRACKS %0d %0d" % (self.joy1.jx*self.cal_trackmove.value,self.joy1.jy*self.cal_trackrotate.value))
+        pilot.send ("TRACKS 0 0")
+
     def SetServo1 (self, smth=""): 
         pilot.send ("SERVO 1 %0d" % self.servo1.value)
 #        self.servo1label.text = "Head ^%03dv" % self.servo1.value

@@ -17,7 +17,8 @@ enum
   kSetServo            ,
   kSetServoMS            ,
   kGetA                , 
-  kGetD                
+  kGetD                ,
+  kSetTracks
 };
 
 int angle;
@@ -35,6 +36,8 @@ void attachCommandCallbacks()
   cmdMessenger.attach(kSetServoMS, OnSetServoMS);
   cmdMessenger.attach(kGetA, OnGetA);
   cmdMessenger.attach(kGetD, OnGetD);
+  cmdMessenger.attach(kSetTracks, OnSetTracks);
+  
 }
 
 
@@ -43,7 +46,7 @@ void attachCommandCallbacks()
 // Called when a received command has no attached function
 void OnUnknownCommand()
 {
-  Serial.println("This command is unknown!");
+  Serial.println("ERR: UNKNOWN COMMAND");
   ShowCommands();
 }
 
@@ -92,7 +95,7 @@ void OnSetPWM()
   boolean val = cmdMessenger.readIntArg();  
   analogWrite(pin, val);   
   SendStatus();
-  Serial.println ("OK");
+  Serial.println ("OK PWM " + String(pin) + " " + String(val));
 }
 
 void OnGetD() 
@@ -130,12 +133,13 @@ void SendStatus()
   }    
   int j=4;
   for (int i=1; i<=3; i++){
-      debug += String(analogRead(i)) + ':';    
-      result[j] = highByte(analogRead(i));
-      debug += String(result[j]) + ' ';
+      int adc analogRead(i);
+//      debug += String(analogRead(i)) + ':';    
+      result[j] = highByte(adc);
+//      debug += String(result[j]) + ' ';
       j++;
-      result[j] = lowByte(analogRead(i));
-      debug += String(result[j]) + ' ';
+      result[j] = lowByte(adc);
+//      debug += String(result[j]) + ' ';
       j++;
   }
  result[j] = '#';
@@ -157,18 +161,44 @@ void ShowCommands()
   Serial.println(" 5 <servo> <byte>;     - Set servo ms");
   Serial.println(" 6 <pin>;            - Read analog in");
   Serial.println(" 7 <pin>;            - Read digital in");
-  
-
+  Serial.println(" 8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;            - Set tracks ");
 }
 
 void OnSetD()
 {
-  // Read led state argument, expects 0 or 1 and interprets as false or true 
+  // Read GPIO state argument, expects 0 or 1 and interprets as false or true 
   int pin = cmdMessenger.readIntArg();  
   boolean level = cmdMessenger.readBoolArg();  
   digitalWrite(pin, level);   
   SendStatus();
-  Serial.println ("OK");
+  Serial.println ("OK SETD " + String(pin) + " " + String(level));
+}
+
+void OnSetTracks()
+{
+#define p1PWM 6
+#define p1FWD 7
+#define p1REV 8
+#define p2PWM 5
+#define p2FWD 4
+#define p2REV 3
+
+
+  boolean lfwd = cmdMessenger.readBoolArg();    
+  boolean lrev = cmdMessenger.readBoolArg();      
+  int lpwm = cmdMessenger.readIntArg();  
+  boolean rfwd = cmdMessenger.readBoolArg();    
+  boolean rrev = cmdMessenger.readBoolArg();      
+  int rpwm = cmdMessenger.readIntArg();  
+  digitalWrite(p2FWD, lfwd);   
+  digitalWrite(p2REV, lrev);    
+  digitalWrite(p1FWD, rfwd);   
+  digitalWrite(p1REV, rrev);    
+  analogWrite(p1PWM, rpwm);   
+  analogWrite(p2PWM, lpwm;    
+    
+  SendStatus();
+  Serial.println ("OK TRACKS " + String(lfwd) + " " + String(lrev) + " " + String(lpwm) + " "  + String(rfwd) + " " + String(rrev) + " " + String(rpwm));
 }
 
 
@@ -184,7 +214,7 @@ void OnSetServo()
   }
   myservo[servo].write(angle);
   SendStatus();
-  Serial.println ("OK");
+  Serial.println ("OK SERVO "+ String(servo) + " " + String(angle));
 }
 
 void OnSetServoMS()
@@ -193,7 +223,7 @@ void OnSetServoMS()
   int ms = cmdMessenger.readIntArg();  
   myservo[servo].writeMicroseconds(ms);
 SendStatus();
-Serial.println ("OK");
+Serial.println ("OK SERVOMS " + String(servo) + " " + String(ms));
 }
 
 
@@ -206,7 +236,7 @@ void setup()
   pinMode(6, OUTPUT);        
   pinMode(7, OUTPUT);        
   pinMode(8, OUTPUT);        
-  pinMode(9, INPUT);        
+  pinMode(9, OUTPUT);        
   pinMode(10, OUTPUT);        
   pinMode(11, OUTPUT);        
   pinMode(12, OUTPUT);        
@@ -214,14 +244,14 @@ void setup()
   analogReference(INTERNAL);
   
   // Listen on serial connection for messages from the PC
-  Serial.begin(38400); 
+  Serial.begin(115200); 
   cmdMessenger.printLfCr();     // Adds newline to every command
   attachCommandCallbacks();   // Attach my application's user-defined callback methods
   Serial.println ("0_o\nK-9 Spinal booted up");
   myservo[1].attach(11,900,2100);
   myservo[2].attach(12);
   myservo[3].attach(10);
-  myservo[3].write(110);
+//  myservo[3].write(110);
   laststatstime = millis();
   SendStatus();
 
@@ -240,11 +270,6 @@ void loop()
   cmdMessenger.feedinSerialData();
   if  (laststatstime + 1000 < millis()) {
        SendStatus();
-  }
-  if (digitalRead(9)) {
-    myservo[3].write(120)
-  } else {
-    myservo[3].write(100)
   }
 
 }                               
