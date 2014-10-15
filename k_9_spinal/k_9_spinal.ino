@@ -133,7 +133,7 @@ void SendStatus()
   }    
   int j=4;
   for (int i=1; i<=3; i++){
-      int adc analogRead(i);
+      int adc=analogRead(i);
 //      debug += String(analogRead(i)) + ':';    
       result[j] = highByte(adc);
 //      debug += String(result[j]) + ' ';
@@ -152,16 +152,16 @@ void SendStatus()
 // Show available commands
 void ShowCommands() 
 {
-  Serial.println("Available commands");
-  Serial.println(" 0;                  - This command list");
-  Serial.println(" 1;                  - Show status");
-  Serial.println(" 2 <pin> <bool>;     - Set digital out");
-  Serial.println(" 3 <pin> <byte>;     - Set pwm out");
-  Serial.println(" 4 <servo> <byte>;     - Set servo angle");
-  Serial.println(" 5 <servo> <byte>;     - Set servo ms");
-  Serial.println(" 6 <pin>;            - Read analog in");
-  Serial.println(" 7 <pin>;            - Read digital in");
-  Serial.println(" 8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;            - Set tracks ");
+  Serial.println('Available commands');
+  Serial.println(' 0;- This command list');
+  Serial.println(' 1;- Show status');
+  Serial.println(' 2 <pin> <bool>; - Set digital out');
+  Serial.println(' 3 <pin> <byte>; - Set pwm out');
+  Serial.println(' 4 <servo> <byte>; - Set servo angle');
+  Serial.println(' 5 <servo> <byte>; - Set servo ms');
+  Serial.println(' 6 <pin>; - Read analog in');
+  Serial.println(' 7 <pin>; - Read digital in');
+  Serial.println(' 8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;            - Set tracks ');
 }
 
 void OnSetD()
@@ -195,7 +195,7 @@ void OnSetTracks()
   digitalWrite(p1FWD, rfwd);   
   digitalWrite(p1REV, rrev);    
   analogWrite(p1PWM, rpwm);   
-  analogWrite(p2PWM, lpwm;    
+  analogWrite(p2PWM, lpwm);    
     
   SendStatus();
   Serial.println ("OK TRACKS " + String(lfwd) + " " + String(lrev) + " " + String(lpwm) + " "  + String(rfwd) + " " + String(rrev) + " " + String(rpwm));
