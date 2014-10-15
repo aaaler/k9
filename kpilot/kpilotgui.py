@@ -25,6 +25,7 @@ Builder.load_string("""
             rectangle: self.x+1,self.y+1,self.width-1,self.height-1
             dash_offset: 5
             dash_length: 3
+    background_color: (0, 0, 0, 0)        
 <MainTabs>:
     size_hint: 1, 1
     pos_hint: {'center_x': .5, 'center_y': .5}
@@ -48,11 +49,8 @@ Builder.load_string("""
 
         BoxLayout:
             orientation: 'vertical'
-            background_color: (0, 0, 0, 0)
             BoxLayout:    
-                background_color: (0, 0, 0, 0)        
                 BoxLayout:
-                    background_color: (0, 0, 0, 0)
                     size_hint: .2, 1
                     orientation: 'vertical'        
                     Label:
@@ -87,7 +85,6 @@ Builder.load_string("""
 
                 BoxLayout:
                     orientation: 'vertical'        
-                    background_color: (0, 0, 0, 0)
                     Label:
                         text: 'Head <>'
                         size_hint: 1, .07
