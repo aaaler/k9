@@ -127,6 +127,7 @@ Builder.load_string("""
         BoxLayout:
             orientation: 'vertical'
             TextInput:
+                background_color: (1, 1, 1, .5)        
                 size_hint: 1, .7
                 readonly: True
                 font_size: 16   
@@ -165,12 +166,31 @@ Builder.load_string("""
                 step: 1
                 size_hint: 1, 1
                 range: 1, 255
-                value: 255
+                value: 200
                 orientation: 'horizontal'
+                disabled: True
             TouchLiveSlider:
+                size_hint: 1, 0.2
                 index: 1
                 min: 0 
+                value: 50
                 max: 100
+                step: 1
+            TouchLiveSlider:
+                size_hint: 1, 0.2
+                index: 1
+                min: 0 
+                value: 50
+                max: 100
+                step: 1
+                color: (1, 0, 0, 1)
+            TouchLiveSlider:
+                size_hint: 1, 0.1
+                index: 1
+                min: 0 
+                value: 50
+                max: 100
+                step: 1
 
 
 
@@ -196,21 +216,21 @@ Builder.load_string("""
         width:200
         halign: 'left'
         text_size: self.size
+
 <TouchLiveSlider>:
     canvas:
         Clear
         Color:
-            rgb: (1, 1, 1)
-        BorderImage:
-            border: (16, 16, 16, 16)
-            pos: self.pos
-            size: self.size
-            source: 'data/images/button.png'            
-        BorderImage:
-            border: (16 * self.value_normalized, 16 * self.value_normalized, 16 * self.value_normalized, 16 * self.value_normalized)
-            pos: self.pos
-            size: self.width * (self.value_normalized if self.orientation == 'horizontal' else 1), self.height * (self.value_normalized if self.orientation == 'vertical' else 1)
-            source: 'data/images/button.png'            
+            rgba: self.color
+        Line:
+            rectangle: self.x+3,self.y+3,self.width-3,self.height-3
+            width: 2
+        Color:
+            rgba: self.color
+        Rectangle:
+            pos: self.x+7, self.y+7
+            size: (self.width-11) * (self.value_normalized if self.orientation == 'horizontal' else 1), (self.height -  11) * (self.value_normalized if self.orientation == 'vertical' else 1)
+
 
 """)
 
@@ -312,7 +332,8 @@ class TouchLiveSlider(Slider):
     '''Custom slider class for having his index and custom graphics defined in
     the .kv
     '''
-    index = NumericProperty(0)        
+    index = NumericProperty(0)
+    color = (82./255,217./255,87./255,1)        
     
 
 class kPilotApp(App):   
