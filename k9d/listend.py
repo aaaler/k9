@@ -36,10 +36,15 @@ def getbit(byteval,idx):
 def parsestate(stat):
     global ardustate
     statusdebug = "";
-    for i in range (2,10):
-      bit = getbit(ord(stat[0]),i-2)
+    b = 0
+    for i in range (2,11):
+      if i in [5,6]: 
+        ardustate['D'+str(i)]='N'
+        continue
+      bit = getbit(ord(stat[0]),b)
+      b +=1
       ardustate['D'+str(i)]=bit
-      statusdebug += (str(i) + ":" + str(bit) + " ")
+      statusdebug += (str(i) + ":" + str(int(bit)) + " ")
     statusdebug += ("s1:" + str(ord(stat[1])) + " ")
     ardustate['S1']=ord(stat[1])
     statusdebug += ("s2:" + str(ord(stat[2])) + " ") 
@@ -117,8 +122,8 @@ def cmdtimeout():
 
 #motor driver pin definition
 p1PWM=str(6)
-p1FWD=str(8)
-p1REV=str(7)
+p1FWD=str(7)
+p1REV=str(8)
 p2PWM=str(5)
 p2FWD=str(4)
 p2REV=str(3)
@@ -132,19 +137,14 @@ def tracks (X,Y) :
   global tracktimeout
   timeout = 100 #not impl.
   tracktimeout = time.time() + (int(timeout)/1000)
-  if X >= 0:
-    spinal_write("2 "+p1FWD+" 1;")
-    spinal_write("2 "+p2FWD+" 1;")
-    spinal_write("2 "+p1REV+" 0;")
-    spinal_write("2 "+p2REV+" 0;")
-  elif X < 0:
-    spinal_write("2 "+p1FWD+" 1;")
-    spinal_write("2 "+p2FWD+" 1;")
-    spinal_write("2 "+p1REV+" 0;")
-    spinal_write("2 "+p2REV+" 0;")
-  spinal_write("3 "+p1PWM+" "+str(abs(int(X)))+";")
-  spinal_write("3 "+p2PWM+" "+str(abs(int(X)))+";")
-  return "%0d %0d" % (int(X),int(Y))
+  if int(Y) >= 0:
+    #8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;
+    out="8 %0d %0d %0d %0d %0d %0d;" % (1,0,abs(int(Y)),1,0,abs(int(Y)))
+  elif int(Y) < 0:
+    out="8 %0d %0d %0d %0d %0d %0d;" % (0,1,abs(int(Y)),0,1,abs(int(Y)))
+ 
+  spinal_write(out);
+  return "OK"
 
 def track (cmd, val, timeout) :
   global tracktimeout,trackmode
@@ -206,7 +206,7 @@ respsock = socket.socket(socket.AF_INET, # Internet
              socket.SOCK_DGRAM) # UDP
 #============SERIAL INIT===================
 try:
-  spinal = serial.Serial('/dev/ttyACM0', 38400, timeout=0.5)
+  spinal = serial.Serial('/dev/ttyACM0', 115200, timeout=0.5)
 except:
   sys.stderr.write("Could not open port for spinal\n")
   sys.exit(1)
@@ -253,8 +253,8 @@ while True:
   CMD = CMD.strip("\n")
   if CMD == "STOP":
     trackstop()
-  elif CMD == "INFO":
-    spinal_write ("1;")
+  elif CMD == "EXEC":
+    spinal_write (' '.join(request))
   elif CMD in ["FWD","REV","LEFT","RIGHT","BREAK"]:
     out += track(CMD,request[0],request[1]);
   elif CMD == "TRACKS":
