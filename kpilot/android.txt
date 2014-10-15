@@ -1,0 +1,3 @@
+title=K9 Pilot
+author=Aler
+orientation=portrait

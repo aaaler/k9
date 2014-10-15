@@ -1,0 +1,337 @@
+from kivy.app import App
+from kivy.uix.tabbedpanel import TabbedPanel
+from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.widget import Widget
+from kivy.uix.stencilview import StencilView
+from kivy.uix.slider import Slider
+from kivy.properties import ObjectProperty, StringProperty, NumericProperty
+from kivy.lang import Builder
+from kivy.clock import Clock
+from kivy.graphics import Color, Ellipse, Line
+#debug fps monitor
+#from kivy.config import Config
+#Config.set('modules', 'monitor', '')
+
+import sys
+import pilot
+import time
+
+
+
+Builder.load_string("""
+<Widget>:
+    canvas.after:
+        Line:
+            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+            dash_offset: 5
+            dash_length: 3
+<MainTabs>:
+    size_hint: 1, 1
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    do_default_tab: False
+    log_box: log_box
+    servo1: servo1
+    servo2: servo2
+    servo1label: servo1label
+    servo2label: servo2label
+    statslabel: statslabel
+    label1:label1
+    label2:label2
+    joy1:joy1
+    cal_trackrotate:cal_trackrotate
+    cal_trackmove:cal_trackmove
+
+    TabbedPanelItem:
+        text: 'Control'
+        border: [1, 1, 1, 1]
+
+
+        BoxLayout:
+            orientation: 'vertical'
+            background_color: (0, 0, 0, 0)
+            BoxLayout:    
+                background_color: (0, 0, 0, 0)        
+                BoxLayout:
+                    background_color: (0, 0, 0, 0)
+                    size_hint: .2, 1
+                    orientation: 'vertical'        
+                    Label:
+                        text: 'l1'
+                        id: label1
+                        size_hint: 1, .2
+                        halign: 'right'
+                        valign: 'bottom'
+                        text_size: self.size
+                    Label:
+                        text: 'l2'
+                        id: label2
+                        size_hint: 1, .2
+                        halign: 'right'            
+                        valign: 'top'
+                        text_size: self.size
+                    Label:
+                        text: 'Head ^v'
+                        size_hint: 1, .05
+                        pos_hint: {'center_x': 0.5, 'top':1}
+                        id: servo1label
+                    
+                    Slider:
+                        id: servo1
+                        step: 2
+                        size_hint: 1, 1
+                        range: 1, 180
+                        value: 90
+                        on_value: root.SetServo1()
+                        orientation: 'vertical'
+                        pos_hint: {'center_x': 0.5}
+
+                BoxLayout:
+                    orientation: 'vertical'        
+                    background_color: (0, 0, 0, 0)
+                    Label:
+                        text: 'Head <>'
+                        size_hint: 1, .07
+                        id: servo2label
+                        pos_hint: {'center_x': 0.5,'y':1}
+                    Slider:
+                        id: servo2
+                        step: 2
+                        size_hint: 1, .07
+                        range: 50, 105
+                        value: 90
+                        on_value: root.SetServo2() 
+                        orientation: 'horizontal'
+                        pos_hint: {'center_x': 0.5, 'top':1}
+                        background_color: (0, 0, 0, 1)
+                    Label:
+                        text: '--'
+                        id: statslabel
+                        font_size: 16
+                        size_hint: .8, .05
+                        pos_hint: {'center_x': 0.5,'y':1}                      
+                    Joystick:
+                        size_hint: 1, 1 
+                        id: joy1			
+                        on_touch_down: root.TracksActivate()
+                        on_touch_move: root.TracksActivate()
+                        on_touch_up: root.TracksDeactivate()
+
+    TabbedPanelItem:
+        text: 'FPV'
+        BoxLayout:
+            orientation: 'vertical'
+            Video:
+                id:fpvideo
+                source: 'http://192.168.0.99:8080/?action=stream'
+                state: 'play'
+
+    TabbedPanelItem:
+        text: 'Log'
+        BoxLayout:
+            orientation: 'vertical'
+            TextInput:
+                size_hint: 1, .7
+                readonly: True
+                font_size: 16   
+                id: log_box        
+    TabbedPanelItem:
+        text: 'Calibration'
+        GridLayout:
+            size_hint: 1, 1
+            rows: 5
+            cols: 2
+            Label:
+                text: 'Tracks move'
+                size_hint: 1, 1
+            Slider:
+                id: cal_trackmove
+                step: 1
+                size_hint: 1, 1
+                range: 1, 100
+                value: 100
+                orientation: 'horizontal'
+            Label:
+                text: 'Tracks rotate factor'
+                size_hint: 1, 1
+            Slider:
+                id: cal_trackrotate
+                step: 1
+                size_hint: 1, 1
+                range: 1, 100
+                value: 100
+                orientation: 'horizontal'
+            Label:
+                text: 'Dead zone'
+                size_hint: 1, 1
+            Slider:
+                id: cal_trackdeadzone
+                step: 1
+                size_hint: 1, 1
+                range: 1, 255
+                value: 255
+                orientation: 'horizontal'
+            TouchLiveSlider:
+                index: 1
+                min: 0 
+                max: 100
+
+
+
+            
+<Joystick>:
+    joycap:joycap
+    coordslabel:coordslabel
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 0
+        Rectangle:
+            pos: self.pos
+            size: self.size
+    Label:
+        id: joycap
+        text: '+'
+    Label:
+        id: coordslabel
+        text: '--'
+        x: self.parent.x 
+        y: self.parent.y
+        height:20
+        width:200
+        halign: 'left'
+        text_size: self.size
+<TouchLiveSlider>:
+    canvas:
+        Clear
+        Color:
+            rgb: (1, 1, 1)
+        BorderImage:
+            border: (16, 16, 16, 16)
+            pos: self.pos
+            size: self.size
+            source: 'data/images/button.png'            
+        BorderImage:
+            border: (16 * self.value_normalized, 16 * self.value_normalized, 16 * self.value_normalized, 16 * self.value_normalized)
+            pos: self.pos
+            size: self.width * (self.value_normalized if self.orientation == 'horizontal' else 1), self.height * (self.value_normalized if self.orientation == 'vertical' else 1)
+            source: 'data/images/button.png'            
+
+""")
+
+class MainTabs(TabbedPanel):
+    log_box = ObjectProperty()
+    speed = ObjectProperty()
+    rot_speed = ObjectProperty()
+    statslabel = ObjectProperty()
+    label1 = ObjectProperty()
+    label2 = ObjectProperty()
+
+#    
+#    def TrackButtonDown (self, cmd): 
+#        pilot.direction = cmd
+#        self.SetSpeeds (self)    
+
+#    def SetSpeeds (self, smth=""): 
+#        pilot.speed = int (self.speed.value)
+#        pilot.rotspeed = int (self.rot_speed.value)
+    
+#    def TrackButtonUp (self, cmd):
+#        if pilot.direction == cmd : 
+#            pilot.send ("STOP")
+#            pilot.direction = "";
+    def TracksActivate (self):
+	if (self.joy1.jy != 0 or self.joy1.jx != 0 ):
+          pilot.send ("TRACKS %0d %0d" % (self.joy1.jx*self.cal_trackmove.value,self.joy1.jy*self.cal_trackrotate.value))
+
+    def TracksDeactivate (self):
+	if (self.joy1.jy == 0 and self.joy1.jx == 0 ):
+          pilot.send ("TRACKS %0d %0d" % (self.joy1.jx*self.cal_trackmove.value,self.joy1.jy*self.cal_trackrotate.value))
+    def SetServo1 (self, smth=""): 
+        pilot.send ("SERVO 1 %0d" % self.servo1.value)
+#        self.servo1label.text = "Head ^%03dv" % self.servo1.value
+
+    def SetServo2 (self, smth=""): 
+        pilot.send ("SERVO 2 %0d" % self.servo2.value)
+#        self.servo2label.text = "Head <%03d>" % self.servo2.value
+
+                    
+
+        
+
+    def logupdate(self, dt):
+        while pilot.udpreader(): pass
+        try: 
+            self.label1.text = "Li-ion: %0.2f V\n +5: %0.2f V\n"  % (float(pilot.stats['A3'])*0.009774078,float(pilot.stats['A2'])*0.0096850)
+            self.label2.text = "dT: %0.4f s.\nSonar: %0.3f\n" % (pilot.statsdtime, float(pilot.stats['Son'])/1000)
+            self.servo1label.text = "Head ^%03dv" % int(pilot.stats['S1'])
+            self.servo2label.text = "Head <%03d>" % int(pilot.stats['S2'])
+#            self.servo1.value = int(pilot.stats['S1'])
+#bad idea really, undefined behavior.
+            self.statslabel.text = "S1:" + str() + " S2:" + str(pilot.stats['S2']) + " dT:" + "%0.4f" % pilot.statsdtime + " Sonar: " + str(pilot.stats['Son'])
+        except KeyError: self.statslabel.text = "not yet"
+        while len(pilot.udpinmsgs) > 0 :
+            try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
+            except UnicodeDecodeError: self.log_box.text += "[...]"
+        
+class Joystick(Widget):
+#StencilView
+    jx = 0.;
+    jy = 0.;
+    def on_height(self, pos, smth='123'):
+        self.resetcap(); 
+    def on_width(self, pos, smth='123'):
+        self.resetcap(); 
+    def on_touch_down(self, touch):
+	if self.collide_point(touch.x,touch.y):
+          self.movecap(touch);
+          touch.grab(self)
+          return True;
+    def on_touch_move(self, touch):
+      	if self.collide_point(touch.x,touch.y):
+          if touch.grab_current == self:
+            self.movecap(touch);
+            return True
+
+    def on_touch_up(self, touch):
+        if touch.grab_current == self:
+            self.resetcap();
+            return True
+
+
+    def resetcap(self):
+          self.joycap.center_x = self.center_x;
+          self.joycap.center_y = self.center_y;
+          self.jx = 0.;
+          self.jy = 0.;
+          self.coordslabel.text = "x:%0.3f y: %0.3f" % (self.jx ,self.jy) 
+
+    def movecap(self, touch):
+          self.joycap.center_x = touch.x;
+          self.joycap.center_y = touch.y;
+	  self.jx = ((touch.x - self.x) - self.width/2)/self.width*2
+	  self.jy = ((touch.y - self.y) - self.height/2)/self.height*2
+          self.coordslabel.text = "x:%0.3f y: %0.3f" % (self.jx ,self.jy) 
+
+class TouchLiveSlider(Slider):
+    '''Custom slider class for having his index and custom graphics defined in
+    the .kv
+    '''
+    index = NumericProperty(0)        
+    
+
+class kPilotApp(App):   
+    mainform = ObjectProperty()
+    def build(self):
+        self.mainform = MainTabs()
+        pilot.init()
+        Clock.schedule_interval(self.mainform.logupdate, .1)
+#        Clock.schedule_interval(pilot.udpreader, .05)
+        self.mainform.log_box.text = "Running client on Python " + sys.version + "\n"
+        self.mainform.log_box.text += "K-9 Greets the master :-)\n"
+        return self.mainform
+    def on_pause(self):
+      # Here you can save data if needed
+      # called on android background or standby
+        return True
+
+if __name__ == '__main__':
+    kPilotApp().run()
