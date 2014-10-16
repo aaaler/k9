@@ -53,7 +53,7 @@ def parsestate(stat):
     ardustate['A1']=str(ord(stat[4]) + (ord(stat[3])<<8))
     statusdebug += ("a2:" + str(ord(stat[6]) + (ord(stat[5])<<8)) + " ")
     ardustate['A2']=str(ord(stat[6]) + (ord(stat[5])<<8))
-    statusdebug += ("a3:" + str(ord(stat[8]) + (ord(stat[7])<<8)) + " ")
+    statusdebug += ("a3:" + str(ord(stat[8]) + (ord(stat[7])<<8)) + "\n")
     ardustate['A3']=str(ord(stat[8]) + (ord(stat[7])<<8))
     print (statusdebug);
     stateupload()
@@ -135,13 +135,22 @@ sonardist = 0
 
 def tracks (X,Y) :
   global tracktimeout
+  global trackl, trackr
   timeout = 100 #not impl.
   tracktimeout = time.time() + (int(timeout)/1000)
   if int(Y) >= 0:
     #8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;
-    out="8 %0d %0d %0d %0d %0d %0d;" % (1,0,abs(int(Y)),1,0,abs(int(Y)))
+    trackl = int(Y) + int (X)
+    trackr = int(Y) - int (X)
+#    out="8 %0d %0d %0d %0d %0d %0d;" % (1,0,abs(int(Y)),1,0,abs(int(Y)))
   elif int(Y) < 0:
-    out="8 %0d %0d %0d %0d %0d %0d;" % (0,1,abs(int(Y)),0,1,abs(int(Y)))
+    trackl = int(Y) + int (X)
+    trackr = int(Y) - int (X)
+  if trackr > 1: trackr = 1
+  if trackl > 1: trackl = 1
+  if trackr < -1: trackr = -1
+  if trackl < -1: trackl = -1
+  out="8 %0d %0d %0d %0d %0d %0d;" % (trackl>0,trackl<0,abs(int(trackr)),trackr>0,trackr<0,abs(int(trackl)))
  
   spinal_write(out);
   return "OK"
