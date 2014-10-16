@@ -63,13 +63,13 @@ def parsestate(stat):
 def tstateup ():
     while 1:
       if os.path.exists("/sys/class/power_supply/battery/capacity"):
-        ardustate['cpu_bcap'] = open("/sys/class/power_supply/battery/capacity", "r").read().strip()
+        ardustate['cpu_bcap'] = int(open("/sys/class/power_supply/battery/capacity", "r").read().strip())
       if os.path.exists("/sys/class/power_supply/battery/current_now"):
-        ardustate['cpu_bcur'] = open("/sys/class/power_supply/battery/current_now", "r").read().strip()
+        ardustate['cpu_bcur'] = int(open("/sys/class/power_supply/battery/current_now", "r").read().strip())/1000
       if os.path.exists("/sys/class/power_supply/ac/current_now"):
-        ardustate['cpu_accur'] = open("/sys/class/power_supply/ac/current_now", "r").read().strip()
+        ardustate['cpu_accur'] = int(open("/sys/class/power_supply/ac/current_now", "r").read().strip())/1000
       if os.path.exists("/sys/class/power_supply/battery/status"):
-        ardustate['cpu_accur'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
+        ardustate['cpu_bstate'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
 
       stateupload()
       time.sleep (1)
@@ -90,6 +90,7 @@ def tsonar ():
 #        print ("SONAR H:"+ str( sonardist))
         ardustate["Son"]=sonardist
       except serial.SerialException:
+	ardustate["Son"]=65535
         print ("Sonar err")
         pass
       time.sleep(.05)
@@ -146,21 +147,25 @@ sonardist = 0
 def tracks (X,Y) :
   global tracktimeout
   global trackl, trackr
+  #calibration should be here
+  cal_track_min = 180
+  fX = float(X);
+  fY = float(Y);
   timeout = 100 #not impl.
   tracktimeout = time.time() + (int(timeout)/1000)
-  if int(Y) >= 0:
+  if fY >= 0:
     #8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;
-    trackl = int(Y) + int (X)
-    trackr = int(Y) - int (X)
+    trackl = fY + fX
+    trackr = fY - fX
 #    out="8 %0d %0d %0d %0d %0d %0d;" % (1,0,abs(int(Y)),1,0,abs(int(Y)))
-  elif int(Y) < 0:
-    trackl = int(Y) + int (X)
-    trackr = int(Y) - int (X)
+  elif fY < 0:
+    trackl = fY + fX
+    trackr = fY - fX
   if trackr > 1: trackr = 1
   if trackl > 1: trackl = 1
   if trackr < -1: trackr = -1
   if trackl < -1: trackl = -1
-  out="8 %0d %0d %0d %0d %0d %0d;" % (trackl>0,trackl<0,abs(int(trackr)),trackr>0,trackr<0,abs(int(trackl)))
+  out="8 %0d %0d %0d %0d %0d %0d;" % (trackl>0,trackl<0,abs(trackr)*(255-cal_track_min)+cal_track_min,trackr>0,trackr<0,abs(trackl)*(255-cal_track_min)+cal_track_min)
   spinal_write(out);
   ardustate['trackr'] = trackr;
   ardustate['trackl'] = trackl;
