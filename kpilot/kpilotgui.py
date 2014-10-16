@@ -258,7 +258,7 @@ class MainTabs(TabbedPanel):
 #            pilot.direction = "";
     def TracksActivate (self):
 	if (self.joy1.jy != 0 or self.joy1.jx != 0 ):
-          pilot.send ("TRACKS %0d %0d" % (self.joy1.jx*self.cal_trackmove.value,self.joy1.jy*self.cal_trackmove.value))
+          pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.jx,self.joy1.jy))
 
     def TracksDeactivate (self):
         pilot.send ("TRACKS 0 0")
@@ -278,14 +278,14 @@ class MainTabs(TabbedPanel):
     def logupdate(self, dt):
         while pilot.udpreader(): pass
         try: 
-            self.label1.text = "Li-ion: %0.2f V\n +5: %0.2f V\n"  % (float(pilot.stats['A3'])*0.009774078,float(pilot.stats['A2'])*0.0096850)
-            self.label2.text = "dT: %0.4f s.\nSonar: %0.3f\n" % (pilot.statsdtime, float(pilot.stats['Son'])/1000)
+            self.label1.text = "Li-ion: %0.2fV\n +5: %0.2fV\n"  % (float(pilot.stats['A3'])*0.009774078,float(pilot.stats['A2'])*0.0096850)
+            self.label2.text = "dT: %0.2fs.\nSonar: %0.2fM\n" % (pilot.statsdtime, float(pilot.stats['Son'])/1000)
             self.servo1label.text = "Head ^%03dv" % int(pilot.stats['S1'])
             self.servo2label.text = "Head <%03d>" % int(pilot.stats['S2'])
 #            self.servo1.value = int(pilot.stats['S1'])
 #bad idea really, undefined behavior.
-            self.statslabel.text = "S1:" + str() + " S2:" + str(pilot.stats['S2']) + " dT:" + "%0.4f" % pilot.statsdtime + " Sonar: " + str(pilot.stats['Son'])
-        except KeyError: self.statslabel.text = "not yet"
+            self.statslabel.text = "CPU BAT: {:d}% {:d}mA Ext: {:d}mA State: {}".format(pilot.stats['cpu_bcap'],pilot.stats['cpu_bcur'],pilot.stats['cpu_accur'],pilot.stats['cpu_bstate']) 
+        except KeyError as e: self.statslabel.text = "not yet " + e.message
         while len(pilot.udpinmsgs) > 0 :
             try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
             except UnicodeDecodeError: self.log_box.text += "[...]"
