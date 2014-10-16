@@ -37,7 +37,6 @@ Builder.load_string("""
     servo2label: servo2label
     statslabel: statslabel
     label1:label1
-    label2:label2
     joy1:joy1
     cal_trackrotate:cal_trackrotate
     cal_trackmove:cal_trackmove
@@ -56,23 +55,17 @@ Builder.load_string("""
                     Label:
                         text: 'l1'
                         id: label1
-                        size_hint: 1, .2
+                        size_hint: 1, .7
                         halign: 'right'
                         valign: 'bottom'
-                        text_size: self.size
-                    Label:
-                        text: 'l2'
-                        id: label2
-                        size_hint: 1, .2
-                        halign: 'right'            
-                        valign: 'top'
+                        font_size: '13sp'
                         text_size: self.size
                     Label:
                         text: 'Head ^v'
                         size_hint: 1, .05
                         pos_hint: {'center_x': 0.5, 'top':1}
                         id: servo1label
-                    
+                        font_size: '14sp'
                     Slider:
                         id: servo1
                         step: 2
@@ -89,6 +82,7 @@ Builder.load_string("""
                         text: 'Head <>'
                         size_hint: 1, .07
                         id: servo2label
+                        font_size: '14sp'
                         pos_hint: {'center_x': 0.5,'y':1}
                     Slider:
                         id: servo2
@@ -104,9 +98,10 @@ Builder.load_string("""
                     Label:
                         text: '--'
                         id: statslabel
-                        font_size: 16
-                        size_hint: .8, .05
-                        pos_hint: {'center_x': 0.5,'y':1}                      
+                        font_size: '14sp'
+                        size_hint: 1, .05
+                        text_size: self.size
+                        halign: 'right'
                     Joystick:
                         size_hint: 1, 1 
                         id: joy1			
@@ -222,8 +217,9 @@ Builder.load_string("""
         text: '--'
         x: self.parent.x 
         y: self.parent.y
-        height:20
-        width:200
+        font_size: '14sp'
+        height:'18sp'
+        width:'150sp'
         halign: 'left'
         text_size: self.size
 
@@ -250,7 +246,7 @@ class MainTabs(TabbedPanel):
     rot_speed = ObjectProperty()
     statslabel = ObjectProperty()
     label1 = ObjectProperty()
-    label2 = ObjectProperty()
+
 
     def TracksMove (self):
         pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))
@@ -274,12 +270,14 @@ class MainTabs(TabbedPanel):
         while pilot.udpreader(): pass
         try: 
             self.label1.text = "Li-ion: %0.2fV\n +5: %0.2fV\n"  % (float(pilot.stats['A3'])*0.009774078,float(pilot.stats['A2'])*0.0096850)
-            self.label2.text = "dT: %0.2fs.\nSonar: %0.2fM\n" % (pilot.statsdtime, float(pilot.stats['Son'])/1000)
+            self.label1.text += "dT: %0.2fs.\nSonar: %0.2fM\n" % (pilot.statsdtime, float(pilot.stats['Son'])/1000)
+            self.label1.text += "CPU BAT: {:d}% \n{:d}mA \nExt: {:d}mA \nState: {}".format(pilot.stats['cpu_bcap'],pilot.stats['cpu_bcur'],pilot.stats['cpu_accur'],pilot.stats['cpu_bstate']) 
+            self.statslabel.text = "L: {:+.2f} R: {:+.2f}".format(pilot.stats['trackr'], pilot.stats['trackl'])
             self.servo1label.text = "Head ^%03dv" % int(pilot.stats['S1'])
             self.servo2label.text = "Head <%03d>" % int(pilot.stats['S2'])
 #            self.servo1.value = int(pilot.stats['S1'])
 #bad idea really, undefined behavior.
-            self.statslabel.text = "CPU BAT: {:d}% {:d}mA Ext: {:d}mA State: {}".format(pilot.stats['cpu_bcap'],pilot.stats['cpu_bcur'],pilot.stats['cpu_accur'],pilot.stats['cpu_bstate']) 
+
         except KeyError as e: self.statslabel.text = "not yet " + e.message
         while len(pilot.udpinmsgs) > 0 :
             try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
@@ -297,7 +295,7 @@ class Joystick(Widget):
     def on_width(self, pos, smth='123'):
         self.resetcap(); 
     def on_touch_down(self, touch):
-	if self.collide_point(touch.x,touch.y):
+      if self.collide_point(touch.x,touch.y):
           self.movecap(touch);
           touch.grab(self)
           return True;
@@ -308,7 +306,6 @@ class Joystick(Widget):
           if touch.x < self.x: touch.x = self.x
           if touch.y > self.height + self.y: touch.y = self.height + self.y
           if touch.y < self.y: touch.y = self.y
-
           self.movecap(touch);
           return True
 
@@ -331,10 +328,9 @@ class Joystick(Widget):
 
     def movecap(self, touch):
       if touch.x > self.center_x - (self.width*self.deadzone) and touch.x < self.center_x + (self.width*self.deadzone):
-        touch.x = self.center_x;
+        touch.x = self.center_x
       if touch.y > self.center_y - (self.height*self.deadzone) and touch.y < self.center_y + (self.height*self.deadzone):
         touch.y = self.center_y;
-
       self.joycap.center_x = touch.x;
       self.joycap.center_y = touch.y;
       self.jx = ((touch.x - self.x) - self.width/2)/self.width*2
