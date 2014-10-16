@@ -151,9 +151,10 @@ def tracks (X,Y) :
   if trackr < -1: trackr = -1
   if trackl < -1: trackl = -1
   out="8 %0d %0d %0d %0d %0d %0d;" % (trackl>0,trackl<0,abs(int(trackr)),trackr>0,trackr<0,abs(int(trackl)))
- 
   spinal_write(out);
-  return "OK"
+  ardustate['trackr'] = trackr;
+  ardustate['trackl'] = trackl;
+  return " OK"
 
 def track (cmd, val, timeout) :
   global tracktimeout,trackmode
