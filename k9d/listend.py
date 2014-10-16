@@ -6,6 +6,7 @@ import sys
 import struct
 import time
 import cPickle
+import os
 
 def send (body,ip) :
 #  return respsock.sendto(bytes(body, 'UTF-8'), ("192.168.0.22", UDP_PORT))
@@ -61,6 +62,15 @@ def parsestate(stat):
 
 def tstateup ():
     while 1:
+      if os.path.exists("/sys/class/power_supply/battery/capacity"):
+        ardustate['cpu_bcap'] = open("/sys/class/power_supply/battery/capacity", "r").read().strip()
+      if os.path.exists("/sys/class/power_supply/battery/current_now"):
+        ardustate['cpu_bcur'] = open("/sys/class/power_supply/battery/current_now", "r").read().strip()
+      if os.path.exists("/sys/class/power_supply/ac/current_now"):
+        ardustate['cpu_accur'] = open("/sys/class/power_supply/ac/current_now", "r").read().strip()
+      if os.path.exists("/sys/class/power_supply/battery/status"):
+        ardustate['cpu_accur'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
+
       stateupload()
       time.sleep (1)
 
