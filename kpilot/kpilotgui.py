@@ -7,7 +7,7 @@ from kivy.uix.slider import Slider
 from kivy.properties import ObjectProperty, StringProperty, NumericProperty, ListProperty
 from kivy.lang import Builder
 from kivy.clock import Clock
-from kivy.graphics import Color, Ellipse, Line
+from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicException
 #debug fps monitor
 #from kivy.config import Config
 #Config.set('modules', 'monitor', '')
@@ -294,11 +294,20 @@ class Joystick(Widget):
         self.resetcap(); 
     def on_width(self, pos, smth='123'):
         self.resetcap(); 
+
     def on_touch_down(self, touch):
       if self.collide_point(touch.x,touch.y):
-          self.movecap(touch);
+          self.movecap(touch)
           touch.grab(self)
-          return True;
+          ud = touch.ud
+          ud['group'] = g = str(touch.uid)
+          with self.canvas:
+            ud['color'] = Color (0.7,0.7,0.7,0.3, group=g)
+            ud['lines'] = (
+              Rectangle(pos=(touch.x, self.y), size=(1, self.height), group=g),
+              Rectangle(pos=(self.x, touch.y), size=(self.width, 1), group=g)
+              )
+          return True
 
     def on_touch_move(self, touch):
         if touch.grab_current == self:
@@ -306,12 +315,18 @@ class Joystick(Widget):
           if touch.x < self.x: touch.x = self.x
           if touch.y > self.height + self.y: touch.y = self.height + self.y
           if touch.y < self.y: touch.y = self.y
+          ud = touch.ud
+          ud['lines'][0].pos = touch.x, self.y
+          ud['lines'][1].pos = self.x, touch.y
           self.movecap(touch);
           return True
 
     def on_touch_up(self, touch):
         if touch.grab_current == self:
             self.resetcap();
+            touch.ungrab(self)
+            ud = touch.ud
+            self.canvas.remove_group(ud['group'])
             return True
 
 
