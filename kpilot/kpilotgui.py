@@ -30,7 +30,7 @@ Builder.load_string("""
 <Label>:
     canvas.before:
         Color:
-            rgba: 0.5, 0.5, 0.5, 0.4
+            rgba: 0.1, 0.1, 0.1, 0.4
         Rectangle:
             pos: self.pos
             size: self.size
