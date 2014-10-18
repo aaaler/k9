@@ -17,6 +17,7 @@ import sys
 import pilot
 import time
 
+<<<<<<< HEAD
 
 
 Builder.load_string("""
@@ -27,9 +28,18 @@ Builder.load_string("""
 #            dash_offset: 5
 #            dash_length: 3
 
+=======
+
+
+Builder.load_string("""
+<Widget>:
+    canvas.after:
+        Line:
+            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+            dash_offset: 5
+            dash_length: 3
+>>>>>>> parent of 026fdb9... FPV background, seems to work only in Win
     background_color: (0, 0, 0, 0)        
-<Label>:
-    background_color: (0.4, 0.4, 0.4, 1)        
 <MainTabs>:
     size_hint: 1, 1
     pos_hint: {'center_x': .5, 'center_y': .5}
@@ -44,21 +54,14 @@ Builder.load_string("""
     joy1:joy1
     cal_trackrotate:cal_trackrotate
     cal_trackmove:cal_trackmove
-    bVid:bVid
-    fpvideo:fpvideo
 
     TabbedPanelItem:
         text: 'Control'
         border: [1, 1, 1, 1]
 
 
-        FloatLayout:
-            Video:
-                id:fpvideo
-                source: 'http://192.168.0.99:8080/?action=stream'
-                state: 'stop'
-                opacity: 0
-
+        BoxLayout:
+            orientation: 'vertical'
             BoxLayout:    
                 BoxLayout:
                     size_hint: .2, 1
@@ -68,7 +71,7 @@ Builder.load_string("""
                         id: label1
                         size_hint: 1, .7
                         halign: 'right'
-                        valign: 'top'
+                        valign: 'bottom'
                         font_size: '13sp'
                         text_size: self.size
                     Label:
@@ -89,6 +92,7 @@ Builder.load_string("""
 
                 BoxLayout:
                     orientation: 'vertical'        
+<<<<<<< HEAD
                     BoxLayout:
                         orientation: 'horizontal'        
                         size_hint: (1, None)
@@ -134,6 +138,25 @@ Builder.load_string("""
                             orientation: 'horizontal'
                             pos_hint: {'center_x': 0.5, 'top':1}
                             background_color: (0, 0, 0, 1)
+=======
+                    Label:
+                        text: 'Head <>'
+                        size_hint: 1, .07
+                        id: servo2label
+                        font_size: '14sp'
+                        pos_hint: {'center_x': 0.5,'y':1}
+                    Slider:
+                        id: servo2
+                        step: 2
+                        size_hint: 1, .07
+                        range: 50, 105
+                        value: 90
+			
+                        on_value: root.SetServo2() 
+                        orientation: 'horizontal'
+                        pos_hint: {'center_x': 0.5, 'top':1}
+                        background_color: (0, 0, 0, 1)
+>>>>>>> parent of 026fdb9... FPV background, seems to work only in Win
                     Label:
                         text: '--'
                         id: statslabel
@@ -148,6 +171,14 @@ Builder.load_string("""
                         on_pos: root.TracksMove ()
                         on_touch_up: root.TracksStop ()
 
+    TabbedPanelItem:
+        text: 'FPV'
+        BoxLayout:
+            orientation: 'vertical'
+            Video:
+                id:fpvideo
+                source: 'http://192.168.0.99:8080/?action=stream'
+                state: 'play'
 
     TabbedPanelItem:
         text: 'Log'
@@ -278,8 +309,7 @@ class MainTabs(TabbedPanel):
     rot_speed = ObjectProperty()
     statslabel = ObjectProperty()
     label1 = ObjectProperty()
-    fpvideo = ObjectProperty()
-    bVid = ObjectProperty()
+
 
     def TracksMove (self):
         pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))
@@ -295,18 +325,9 @@ class MainTabs(TabbedPanel):
         pilot.send ("SERVO 2 %0d" % self.servo2.value)
 #        self.servo2label.text = "Head <%03d>" % self.servo2.value
 
-    def VideoPlayerButton (self):
-        if self.bVid.state == 'normal':
-          self.log_box.text += "video stop \n"
-          self.bVid.text = '|>'
-          self.fpvideo.state = 'stop'
-          self.fpvideo.opacity = 0          
-        elif self.bVid.state == 'down':
-          self.log_box.text += "video start \n"                    
-          self.bVid.text = '||'
-          self.fpvideo.state = 'play'
-          self.fpvideo.opacity = 1          
-        return True
+                    
+
+        
 
     def logupdate(self, dt):
         while pilot.udpreader(): pass
@@ -321,9 +342,9 @@ class MainTabs(TabbedPanel):
 #bad idea really, undefined behavior.
 
         except KeyError as e: self.statslabel.text = "not yet " + e.message
-#        while len(pilot.udpinmsgs) > 0 :
-#            try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
-#            except UnicodeDecodeError: self.log_box.text += "[...]"
+        while len(pilot.udpinmsgs) > 0 :
+            try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
+            except UnicodeDecodeError: self.log_box.text += "[...]"
         
 class Joystick(Widget):
 #StencilView
@@ -339,6 +360,7 @@ class Joystick(Widget):
 
     def on_touch_down(self, touch):
       if self.collide_point(touch.x,touch.y):
+          self.movecap(touch)
           touch.grab(self)
           ud = touch.ud
           ud['group'] = g = str(touch.uid)
@@ -348,7 +370,6 @@ class Joystick(Widget):
               Rectangle(pos=(touch.x, self.y), size=(1, self.height), group=g),
               Rectangle(pos=(self.x, touch.y), size=(self.width, 1), group=g)
               )
-          self.movecap(touch)
           return True
 
     def on_touch_move(self, touch):
