@@ -8,23 +8,25 @@ from kivy.properties import ObjectProperty, StringProperty, NumericProperty, Lis
 from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicException
-#debug fps monitor
-#from kivy.config import Config
-#Config.set('modules', 'monitor', '')
+from kivy.config import Config
+from kivy.core.window import Window
+from kivy.uix.spinner import Spinner
+
 
 import sys
 import pilot
 import time
 
+
+
+Builder.load_string("""
+<Widget>:
 #    canvas.after:
 #        Line:
 #            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
 #            dash_offset: 5
 #            dash_length: 3
 
-
-Builder.load_string("""
-<Widget>:
     background_color: (0, 0, 0, 0)        
 <Label>:
     background_color: (0.4, 0.4, 0.4, 1)        
@@ -89,35 +91,49 @@ Builder.load_string("""
                     orientation: 'vertical'        
                     BoxLayout:
                         orientation: 'horizontal'        
-                        size_hint: 1, .07
+                        size_hint: (1, None)
+                        height: '30sp'
                         ToggleButton:
-                            size: '20sp','20sp'
+                            size: '30sp','30sp'
+                            size_hint: (None, None)
                             id:bVid
                             text: '|>'
                             on_press: root.VideoPlayerButton ()
-                            size_hint: 0.1, 1
                             background_color: (0.5, 0.5, 0.5, 0.4)  
+                        Spinner:
+                            text:'Not Init'
+                            values: ('Failsafe 0.2','Failsafe 0.4', 'Failsafe off','Sonar off')
+                            size_hint: (None, None)
+                            size: '80sp','30sp'
+                            id: bSon
+                            on_text: print 'Sonar:' + self.text
+                            opacity: 0.4
+
+                    BoxLayout:
+                        orientation: 'horizontal'        
+                        size_hint: (1, None)
+                        height: '30sp'
                         Label:
                             text: 'Head <>'
-                            size_hint: 0.9, 1
+                            size: '80sp','30sp'
+                            size_hint: (None, None)
                             id: servo2label
                             halign: 'right'
-                            valign: 'top'
+                            valign: 'middle'
                             font_size: '14sp'
                             text_size: self.size
 
-
-                    Slider:
-                        id: servo2
-                        step: 2
-                        size_hint: 1, .07
-                        range: 50, 105
-                        value: 90
-			
-                        on_value: root.SetServo2() 
-                        orientation: 'horizontal'
-                        pos_hint: {'center_x': 0.5, 'top':1}
-                        background_color: (0, 0, 0, 1)
+                        Slider:
+                            id: servo2
+                            step: 2
+                            size_hint: (1, None)
+                            height: '30sp'
+                            range: 50, 105
+                            value: 90		        
+                            on_value: root.SetServo2() 
+                            orientation: 'horizontal'
+                            pos_hint: {'center_x': 0.5, 'top':1}
+                            background_color: (0, 0, 0, 1)
                     Label:
                         text: '--'
                         id: statslabel
@@ -128,6 +144,7 @@ Builder.load_string("""
                     Joystick:
                         size_hint: 1, 1 
                         id: joy1			
+                        border: [1, 1, 1, 1]
                         on_pos: root.TracksMove ()
                         on_touch_up: root.TracksStop ()
 
@@ -400,6 +417,15 @@ class kPilotApp(App):
     def on_pause(self):
       # Here you can save data if needed
       # called on android background or standby
+        Config.set('graphics', 'height', 'Window.height')
+        Config.set('graphics', 'width', 'Window.width')        
+        Config.write()
+        return True
+
+    def on_stop(self):
+        Config.set('graphics', 'height', Window.height)
+        Config.set('graphics', 'width', Window.width)        
+        Config.write()
         return True
 
 if __name__ == '__main__':
