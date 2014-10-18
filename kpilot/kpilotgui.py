@@ -27,9 +27,15 @@ Builder.load_string("""
 #            dash_offset: 5
 #            dash_length: 3
 
-    background_color: (0, 0, 0, 0)        
 <Label>:
-    background_color: (0.4, 0.4, 0.4, 1)        
+    canvas.before:
+        Color:
+            rgba: 0.5, 0.5, 0.5, 0.4
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    background_color: (0.3, 0.3, 0.3, 1)        
 <MainTabs>:
     size_hint: 1, 1
     pos_hint: {'center_x': .5, 'center_y': .5}
@@ -71,6 +77,7 @@ Builder.load_string("""
                         valign: 'top'
                         font_size: '13sp'
                         text_size: self.size
+                        background_color: (1, 1, 1, 1)        
                     Label:
                         text: 'Head ^v'
                         size_hint: 1, .05
@@ -92,22 +99,30 @@ Builder.load_string("""
                     BoxLayout:
                         orientation: 'horizontal'        
                         size_hint: (1, None)
-                        height: '30sp'
+                        height: '10mm'
                         ToggleButton:
-                            size: '30sp','30sp'
-                            size_hint: (None, None)
                             id:bVid
+                            size: '10mm','10mm'
+                            size_hint: (None, None)
                             text: '|>'
                             on_press: root.VideoPlayerButton ()
-                            background_color: (0.5, 0.5, 0.5, 0.4)  
+                            opacity: 0.5
                         Spinner:
-                            text:'Not Init'
+                            text:'Camera ???'
+                            values: ('854x480@25','1024x576@25', '1280x720@25','1920x1080@25','854x480@15','1024x576@15', '1280x720@15','1920x1080@15')
+                            size_hint: (None, None)
+                            size: '30mm','10mm'
+                            id: bCam
+                            on_text: print 'Camera:' + self.text
+                            opacity: 0.5
+                        Spinner:
+                            text:'Sonar ???'
                             values: ('Failsafe 0.2','Failsafe 0.4', 'Failsafe off','Sonar off')
                             size_hint: (None, None)
-                            size: '80sp','30sp'
+                            size: '30mm','10mm'
                             id: bSon
                             on_text: print 'Sonar:' + self.text
-                            opacity: 0.4
+                            opacity: 0.5
 
                     BoxLayout:
                         orientation: 'horizontal'        
@@ -239,11 +254,16 @@ Builder.load_string("""
         Rectangle:
             pos: self.center_x - (self.width*self.deadzone), self.y
             size: self.width*0.1, self.height 
+        Color:
+            rgba: 1, 1, 1, .7
+        Line:
+            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
 
 
     Label:
         id: joycap
         text: '+'
+        size: '10mm', '10mm'
     Label:
         id: coordslabel
         text: '--'
@@ -330,7 +350,7 @@ class Joystick(Widget):
 
     jx = 0.;
     jy = 0.;
-    deadzone = 0.05; 
+    deadzone = NumericProperty(.05); 
     pos = ListProperty([0, 0])
     def on_height(self, pos, smth='123'):
         self.resetcap(); 
@@ -343,7 +363,7 @@ class Joystick(Widget):
           ud = touch.ud
           ud['group'] = g = str(touch.uid)
           with self.canvas:
-            ud['color'] = Color (0.7,0.7,0.7,0.3, group=g)
+            ud['color'] = Color (0.7,0.7,0.7,0.5, group=g)
             ud['lines'] = (
               Rectangle(pos=(touch.x, self.y), size=(1, self.height), group=g),
               Rectangle(pos=(self.x, touch.y), size=(self.width, 1), group=g)
