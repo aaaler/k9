@@ -123,11 +123,11 @@ Builder.load_string("""
                             border: [0, 0, 0, 0]
                         Spinner:
                             text:'Camera ???'
-                            values: ('854x480@25','1024x576@25', '1280x720@25','1920x1080@25','854x480@15','1024x576@15', '1280x720@15','1920x1080@15')
+                            values: ('854x480@25','1024x576@25', '1280x720@25','1920x1080@25','854x480@15','1024x576@15', '1280x720@15','1920x1080@15','Camera off')
                             size_hint: (None, None)
                             size: '110sp','30sp'
                             id: bCam
-                            on_text: pilot.send ("CAM RES " + self.text) 
+                            on_text: pilot.send ("CAM RES " + self.text) if text != 'Camera off' else pilot.send ("CAM OFF")
                             opacity: 0.5
                             border: [0, 0, 0, 0]
                         ToggleButton:

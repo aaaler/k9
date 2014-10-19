@@ -10,6 +10,28 @@ import os
 import subprocess
 import re
 
+#Kind a config here
+#arduino tracks bridge pinout
+p1PWM=str(6)
+p1FWD=str(7)
+p1REV=str(8)
+p2PWM=str(5)
+p2FWD=str(4)
+p2REV=str(3)
+#ip
+addr = "192.168.0.22"
+UDP_IP = "0.0.0.0"
+UDP_PORT = 9999
+#sonar
+sonaron = True
+sonarfailsafe = 0
+#init
+ardustate = {}
+tracktimeout = time.time()
+trackmode = ""
+sonardist = 0
+
+
 def send (body,ip) :
 #  return respsock.sendto(bytes(body, 'UTF-8'), ("192.168.0.22", UDP_PORT))
   global addr
@@ -148,18 +170,7 @@ def cmdtimeout():
       time.sleep(0.1)
 
 
-#motor driver pin definition
-p1PWM=str(6)
-p1FWD=str(7)
-p1REV=str(8)
-p2PWM=str(5)
-p2FWD=str(4)
-p2REV=str(3)
-addr = "192.168.0.22"
-tracktimeout = time.time()
-trackmode = ""
-ardustate = {}
-sonardist = 0
+
 
 def tracks (X,Y) :
   global tracktimeout
@@ -239,8 +250,6 @@ def servo (id,angle):
 
 #==============UDP INIT====================
 print ("spinal interface daemon for K-9 starting");
-UDP_IP = "0.0.0.0"
-UDP_PORT = 9999
 servsock = socket.socket(socket.AF_INET, # Internet
                       socket.SOCK_DGRAM) # UDP
 servsock.bind((UDP_IP, UDP_PORT))
@@ -289,7 +298,6 @@ while True:
   sys.stdout.write(str(addr))
   sys.stdout.flush()
 
-  out = "msg was " + data
   request = data.split(' ');
   CMD = request.pop(0) 
   CMD = CMD.strip("\n")
@@ -303,8 +311,37 @@ while True:
     out += tracks(request[0],request[1]);
   elif CMD == "SERVO":
     servo (request[0],request[1]);
+  elif CMD == "SON":
+    if request[0] == 'Failsafe':
+      sonaron = True
+      if request[1] == 'off': sonarfailsafe = 0
+      else: sonarfailsafe = float(request[1])
+    elif request[0] == 'Sonar' and request[1] == 'off' :
+      sonaron = False
+  elif CMD == "CAM":
+    if request[0] == 'RES':
+      if 'pmjpg' in globals():
+        if pmjpg.Poll() == None:
+          pmjpg.kill()
+
+      (fpv_size,fpv_fps)=request[0].split(@)
+      cmd = ("/root/K9/mjpg_streamer/mjpg_streamer", "-i\"/root/K9/mjpg_streamer/input_uvc.so -r {} -f {}\"".config(fpv_size,fpv_fps), " -o \"/root/K9/mjpg_streamer/output_http.so -w /root/K9/mjpg_streamer/www\"")
+      print cmd
+      pmjpg = subprocess.Popen(cmd)
+      if pmjpg.Poll() == None:
+        print "Spawned mjpg_streamer with {}@{} PID: {}".config(fpv_size,fpv_fps,pmjpg.pid)
+      pass
+    elif request[0] == 'OFF':
+      if 'pmjpg' in globals():
+        if pmjpg.Poll() == None:
+          pmjpg.kill()
+      pass
+    elif request[0] == 'ZOOM' and request[1] == 'OFF' :
+      pass
+    elif request[0] == 'ZOOM' and request[1] == 'ON' :
+      pass
   else:
-    out += "unkonown command " + CMD
+    out += "unknown command " + CMD + "\n"
 
   print (out)
 #  send ("command done:" + out, addr);
