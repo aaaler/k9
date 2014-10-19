@@ -7,6 +7,8 @@ import struct
 import time
 import cPickle
 import os
+import subprocess
+import re
 
 def send (body,ip) :
 #  return respsock.sendto(bytes(body, 'UTF-8'), ("192.168.0.22", UDP_PORT))
@@ -70,7 +72,22 @@ def tstateup ():
         ardustate['cpu_accur'] = int(open("/sys/class/power_supply/ac/current_now", "r").read().strip())/1000
       if os.path.exists("/sys/class/power_supply/battery/status"):
         ardustate['cpu_bstate'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
+      piwconfig = subprocess.Popen(["/sbin/iwconfig", "wlan7"], stdout=subprocess.PIPE)
+      iwconfig_out, err = piwconfig.communicate()
+      brre = re.compile (r"Bit Rate=([\d.]+ \S+)",re.M)
+      lqre = re.compile (r"Link Quality=(\d+/\d+)  Signal level=(-\d+ dBm)",re.M)
+      match = brre.search(iwconfig_out)
+      if match: ardustate['wifi_br'] = match.group(1)
+      else: ardustate['wifi_br'] = "n/a"
+      match = lqre.search(iwconfig_out)
+      if match:
+        ardustate['wifi_lq'] = match.group(1)
+        ardustate['wifi_sl'] = match.group(2)
+      else:
+        ardustate['wifi_lq'] = "n/a"
+        ardustate['wifi_sl'] = "n/a"
 
+ 
       stateupload()
       time.sleep (1)
 
