@@ -4,7 +4,7 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.uix.stencilview import StencilView
 from kivy.uix.slider import Slider
-from kivy.properties import ObjectProperty, StringProperty, NumericProperty, ListProperty
+from kivy.properties import ObjectProperty, StringProperty, NumericProperty, ListProperty, BooleanProperty
 from kivy.lang import Builder
 from kivy.clock import Clock
 from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicException
@@ -20,6 +20,7 @@ import time
 
 
 Builder.load_string("""
+
 <Widget>:
 #    canvas.after:
 #        Line:
@@ -27,7 +28,7 @@ Builder.load_string("""
 #            dash_offset: 5
 #            dash_length: 3
 
-<Label>:
+<TaintedLabel@Label>:
     canvas.before:
         Color:
             rgba: 0.1, 0.1, 0.1, 0.4
@@ -64,12 +65,23 @@ Builder.load_string("""
                 source: 'http://192.168.0.99:8080/?action=stream'
                 state: 'stop'
                 opacity: 0
+            Joystick:
+                size: '300sp','300sp'
+                pos_hint: {'right': 1, 'y': 0}
+#                pos: root.width - self.width, 0
+                size_hint: (None, None)
+                id: joy1			
+                border: [1, 1, 1, 1]
+                on_pos: root.TracksMove ()
+                on_touch_up: root.TracksStop ()
 
             BoxLayout:    
                 BoxLayout:
-                    size_hint: .2, 1
+                    size_hint: None, 1
+                    width: '100sp'
+
                     orientation: 'vertical'        
-                    Label:
+                    TaintedLabel:
                         text: 'l1'
                         id: label1
                         size_hint: 1, .7
@@ -78,16 +90,18 @@ Builder.load_string("""
                         font_size: '13sp'
                         text_size: self.size
                         background_color: (1, 1, 1, 1)        
-                    Label:
+                    TaintedLabel:
                         text: 'Head ^v'
-                        size_hint: 1, .05
+                        size_hint: 1, .08
                         pos_hint: {'center_x': 0.5, 'top':1}
                         id: servo1label
                         font_size: '14sp'
-                    Slider:
+                    FancySlider:
                         id: servo1
+                        filled: False
                         step: 2
-                        size_hint: 1, 1
+                        size_hint: None, 1
+                        width: '30sp'
                         range: 1, 180
                         value: 90
                         on_value: root.SetServo1()
@@ -99,30 +113,51 @@ Builder.load_string("""
                     BoxLayout:
                         orientation: 'horizontal'        
                         size_hint: (1, None)
-                        height: '10mm'
+                        height: '30sp'
                         ToggleButton:
                             id:bVid
-                            size: '10mm','10mm'
+                            size: '30sp','30sp'
                             size_hint: (None, None)
                             text: '|>'
                             on_press: root.VideoPlayerButton ()
                             opacity: 0.5
+                            border: [0, 0, 0, 0]
                         Spinner:
                             text:'Camera ???'
                             values: ('854x480@25','1024x576@25', '1280x720@25','1920x1080@25','854x480@15','1024x576@15', '1280x720@15','1920x1080@15')
                             size_hint: (None, None)
-                            size: '30mm','10mm'
+                            size: '110sp','30sp'
                             id: bCam
                             on_text: print 'Camera:' + self.text
                             opacity: 0.5
+                            border: [0, 0, 0, 0]
+                        ToggleButton:
+                            id:bZoom
+                            size: '30sp','30sp'
+                            size_hint: (None, None)
+                            text: 'Z'
+                            on_press: 
+                            disabled: root.bVid.state == 'normal'
+                            opacity: 0.5
+                            border: [0, 0, 0, 0]
+                        ToggleButton:
+                            id:bCall
+                            size: '60sp','30sp'
+                            size_hint: (None, None)
+                            text: 'Call'
+                            on_press: 
+                            opacity: 0.5
+                            border: [0, 0, 0, 0]
+
                         Spinner:
                             text:'Sonar ???'
                             values: ('Failsafe 0.2','Failsafe 0.4', 'Failsafe off','Sonar off')
                             size_hint: (None, None)
-                            size: '30mm','10mm'
+                            size: '110sp','30sp'
                             id: bSon
                             on_text: print 'Sonar:' + self.text
                             opacity: 0.5
+                            border: [0, 0, 0, 0]
 
                     BoxLayout:
                         orientation: 'horizontal'        
@@ -138,8 +173,9 @@ Builder.load_string("""
                             font_size: '14sp'
                             text_size: self.size
 
-                        Slider:
+                        FancySlider:
                             id: servo2
+                            filled: False
                             step: 2
                             size_hint: (1, None)
                             height: '30sp'
@@ -149,19 +185,20 @@ Builder.load_string("""
                             orientation: 'horizontal'
                             pos_hint: {'center_x': 0.5, 'top':1}
                             background_color: (0, 0, 0, 1)
-                    Label:
+                    TaintedLabel:
                         text: '--'
                         id: statslabel
                         font_size: '14sp'
                         size_hint: 1, .05
                         text_size: self.size
                         halign: 'right'
-                    Joystick:
-                        size_hint: 1, 1 
-                        id: joy1			
-                        border: [1, 1, 1, 1]
-                        on_pos: root.TracksMove ()
-                        on_touch_up: root.TracksStop ()
+                    Label:
+                        text: ''
+                        id: justspace
+                        font_size: '14sp'
+                        size_hint: 1, 1
+                        text_size: self.size
+                        halign: 'right'
 
 
     TabbedPanelItem:
@@ -211,14 +248,14 @@ Builder.load_string("""
                 value: 200
                 orientation: 'horizontal'
                 disabled: True
-            TouchLiveSlider:
+            FancySlider:
                 size_hint: 1, 0.2
                 index: 1
                 min: 0 
                 value: 50
                 max: 100
                 step: 1
-            TouchLiveSlider:
+            FancySlider:
                 size_hint: 1, 0.2
                 index: 1
                 min: 0 
@@ -226,7 +263,7 @@ Builder.load_string("""
                 max: 100
                 step: 1
                 color: (1, 0, 0, 1)
-            TouchLiveSlider:
+            FancySlider:
                 size_hint: 1, 0.1
                 index: 1
                 min: 0 
@@ -260,11 +297,14 @@ Builder.load_string("""
             rectangle: self.x+1,self.y+1,self.width-1,self.height-1
 
 
-    Label:
+    TaintedLabel:
         id: joycap
         text: '+'
         size: '10mm', '10mm'
-    Label:
+        center_x: self.parent.center_x 
+        center_y: self.parent.center_y
+
+    TaintedLabel:
         id: coordslabel
         text: '--'
         x: self.parent.x 
@@ -275,19 +315,30 @@ Builder.load_string("""
         halign: 'left'
         text_size: self.size
 
-<TouchLiveSlider>:
+<FancySlider>:
     canvas:
         Clear
         Color:
             rgba: self.color
         Line:
-            rectangle: self.x+3,self.y+3,self.width-3,self.height-3
-            width: 2
+            rectangle: self.x+3,self.y+3,self.width-6,self.height-6
+            width: self.borderwidth
         Color:
             rgba: self.color
         Rectangle:
-            pos: self.x+7, self.y+7
-            size: (self.width-11) * (self.value_normalized if self.orientation == 'horizontal' else 1), (self.height -  11) * (self.value_normalized if self.orientation == 'vertical' else 1)
+            pos: self.x+7 if self.filled else ((self.x + 7 +(self.width-11) *self.value_normalized -1.5) if self.orientation == 'horizontal' else self.x+7), self.y+7 if self.filled else ((self.y + 7 +(self.height-11) *self.value_normalized -1.5) if self.orientation == 'vertical' else self.y+7)
+            size: 3 if self.orientation == 'horizontal' and not self.filled else((self.width-14) * (self.value_normalized if self.orientation == 'horizontal' else 1)) , 3 if self.orientation == 'vertical' and not self.filled else( (self.height-14) * (self.value_normalized if self.orientation == 'vertical' else 1))
+
+
+#rotation
+#canvas.before:
+#    PushMatrix
+#    Rotate:
+#        angle: 180
+#        axis: 0, 0, 1
+#        origin: self.center
+#canvas.after:
+#    PopMatrix
 
 
 """)
@@ -356,6 +407,8 @@ class Joystick(Widget):
         self.resetcap(); 
     def on_width(self, pos, smth='123'):
         self.resetcap(); 
+    def on_pos(self, pos, smth='123'):
+        self.resetcap(); 
 
     def on_touch_down(self, touch):
       if self.collide_point(touch.x,touch.y):
@@ -416,13 +469,14 @@ class Joystick(Widget):
       self.coordslabel.text = "x:%0.3f y: %0.3f" % (self.jx ,self.jy) 
       self.pos = (self.jx ,self.jy)
 
-class TouchLiveSlider(Slider):
+class FancySlider(Slider):
     '''Custom slider class for having his index and custom graphics defined in
     the .kv
     '''
-    index = NumericProperty(0)
-    color = (82./255,217./255,87./255,1)        
-    
+
+    color = (82./255,217./255,87./255,0.5)
+    filled = BooleanProperty (True)
+    borderwidth = NumericProperty(1.5)
 
 class kPilotApp(App):   
     mainform = ObjectProperty()
