@@ -52,6 +52,7 @@ Builder.load_string("""
     cal_trackrotate:cal_trackrotate
     cal_trackmove:cal_trackmove
     bVid:bVid
+    bCam:bCam
     fpvideo:fpvideo
 
     TabbedPanelItem:
@@ -127,7 +128,7 @@ Builder.load_string("""
                             size_hint: (None, None)
                             size: '110sp','30sp'
                             id: bCam
-                            on_text: pilot.send ("CAM RES " + self.text) if text != 'Camera off' else pilot.send ("CAM OFF")
+                            on_text: root.SetCamera()
                             opacity: 0.5
                             border: [0, 0, 0, 0]
                         ToggleButton:
@@ -365,7 +366,7 @@ class MainTabs(TabbedPanel):
         pilot.send ("SERVO 2 %0d" % self.servo2.value)
 #        self.servo2label.text = "Head <%03d>" % self.servo2.value
 
-    def VideoPlayerButton (self):
+    def VideoPlayerButton (self, *args):
         if self.bVid.state == 'normal':
           self.log_box.text += "video stop \n"
           self.bVid.text = '|>'
@@ -379,6 +380,20 @@ class MainTabs(TabbedPanel):
           self.fpvideo.state = 'play'
           self.fpvideo.opacity = 1          
         return True
+
+    def SetCamera (self):    
+      if self.bCam.text == 'Camera off': 
+        pilot.send ("CAM OFF")
+        self.bVid.state = 'normal'
+        self.VideoPlayerButton (self)
+      else:  
+        pilot.send ("CAM RES " + self.bCam.text) 
+        self.bVid.state = 'normal'
+        self.VideoPlayerButton (self)
+        self.bVid.state = 'down'
+        Clock.schedule_once(self.VideoPlayerButton, 4)
+
+
 
     def logupdate(self, dt):
         while pilot.udpreader(): pass
