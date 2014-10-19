@@ -30,6 +30,7 @@ def udpreader (dummy1 = "", dummy2=""):
            stats = cPickle.loads (data[1:])
            statsdtime = time.time() - laststatstime
            laststatstime = time.time()
+           stats['size'] = len (data)
            #udpinmsgs.append(str(cPickle.loads (data[1:])))
            return True
         udpinmsgs.append(str(data))       
