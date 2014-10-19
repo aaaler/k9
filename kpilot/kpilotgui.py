@@ -62,7 +62,6 @@ Builder.load_string("""
         FloatLayout:
             Video:
                 id:fpvideo
-                source: 'http://192.168.0.99:8080/?action=stream'
                 state: 'stop'
                 opacity: 0
             Joystick:
@@ -371,9 +370,11 @@ class MainTabs(TabbedPanel):
           self.log_box.text += "video stop \n"
           self.bVid.text = '|>'
           self.fpvideo.state = 'stop'
+          self.fpvideo.source = ''
           self.fpvideo.opacity = 0          
         elif self.bVid.state == 'down':
           self.log_box.text += "video start \n"                    
+          self.fpvideo.source = 'http://192.168.0.99:8080/?action=stream'
           self.bVid.text = '||'
           self.fpvideo.state = 'play'
           self.fpvideo.opacity = 1          
@@ -480,9 +481,11 @@ class FancySlider(Slider):
 
 class kPilotApp(App):   
     mainform = ObjectProperty()
+    desktop = BooleanProperty()
     def build(self):
         self.mainform = MainTabs()
         pilot.init()
+        self.desktop = bool(Config.get('kivy', 'desktop'))
         Clock.schedule_interval(self.mainform.logupdate, .1)
 #        Clock.schedule_interval(pilot.udpreader, .05)
         self.mainform.log_box.text = "Running client on Python " + sys.version + "\n"
@@ -491,14 +494,12 @@ class kPilotApp(App):
     def on_pause(self):
       # Here you can save data if needed
       # called on android background or standby
-        Config.set('graphics', 'height', 'Window.height')
-        Config.set('graphics', 'width', 'Window.width')        
-        Config.write()
         return True
 
     def on_stop(self):
-        Config.set('graphics', 'height', Window.height)
-        Config.set('graphics', 'width', Window.width)        
+        if self.desktop:
+          Config.set('graphics', 'height', Window.height)
+          Config.set('graphics', 'width', Window.width)        
         Config.write()
         return True
 
