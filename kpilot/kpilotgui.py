@@ -20,7 +20,7 @@ import time
 
 
 Builder.load_string("""
-
+#:import pilot pilot
 <Widget>:
 #    canvas.after:
 #        Line:
@@ -127,7 +127,7 @@ Builder.load_string("""
                             size_hint: (None, None)
                             size: '110sp','30sp'
                             id: bCam
-                            on_text: print 'Camera:' + self.text
+                            on_text: pilot.send ("CAM RES " + self.text) 
                             opacity: 0.5
                             border: [0, 0, 0, 0]
                         ToggleButton:
@@ -135,7 +135,7 @@ Builder.load_string("""
                             size: '30sp','30sp'
                             size_hint: (None, None)
                             text: 'Z'
-                            on_press: 
+                            on_press: pilot.send ("CAM ZOOM ON") if self.state == 'down' else pilot.send ("CAM ZOOM OFF")
                             disabled: root.bVid.state == 'normal'
                             opacity: 0.5
                             border: [0, 0, 0, 0]
@@ -144,7 +144,7 @@ Builder.load_string("""
                             size: '60sp','30sp'
                             size_hint: (None, None)
                             text: 'Call'
-                            on_press: 
+                            on_press: pilot.send ("CALL ON") if self.state == 'down' else pilot.send ("CALL OFF")
                             opacity: 0.5
                             border: [0, 0, 0, 0]
 
@@ -154,7 +154,7 @@ Builder.load_string("""
                             size_hint: (None, None)
                             size: '110sp','30sp'
                             id: bSon
-                            on_text: print 'Sonar:' + self.text
+                            on_text: pilot.send ("SON " + self.text)
                             opacity: 0.5
                             border: [0, 0, 0, 0]
 
