@@ -25,6 +25,8 @@ UDP_PORT = 9999
 #sonar
 sonaron = True
 sonarfailsafe = 0
+#mjpg_streamer related
+videomode = 'OFF'
 #init
 ardustate = {}
 tracktimeout = time.time()
@@ -118,20 +120,22 @@ def stateupload ():
     send ("#"+cPickle.dumps (ardustate),addr)
 
 def tsonar ():
-    global sonardist,ardust
-    while 1:
-      sonar.write("U")
+    global sonardist
+    while True:
+      if sonaron:
+        sonar.write("U")
 #      time.sleep(0.1)
-      try:
-        HighLen = ord(sonar.read(1));                   #High byte of distance
-        LowLen  = ord(sonar.read(1));                   #Low byte of distance
-        sonardist  = int(HighLen*256 + LowLen);             #Calculate the distance
+        try:
+          HighLen = ord(sonar.read(1));                   #High byte of distance
+          LowLen  = ord(sonar.read(1));                   #Low byte of distance
+          sonardist  = int(HighLen*256 + LowLen);             #Calculate the distance
 #        print ("SONAR H:"+ str( sonardist))
-        ardustate["Son"]=sonardist
-      except serial.SerialException:
-	ardustate["Son"]=65535
-        print ("Sonar err")
-        pass
+          ardustate["Son"]=sonardist
+        except serial.SerialException:
+          ardustate["Son"]=65535
+          print ("Sonar err")
+          pass
+      else:ardustate["Son"]=65534
       time.sleep(.05)
       
 
@@ -248,6 +252,20 @@ def trackstop () :
 def servo (id,angle):
   spinal_write("4 "+str(id)+" "+str(angle)+";")
 
+def run_mjpg (params):
+      global pmjpg, videomode
+      out = ''
+      (fpv_size,fpv_fps)=params.split('@')
+      cmd = ("/root/K9/mjpg_streamer/mjpg_streamer", "-i", "/root/K9/mjpg_streamer/input_uvc.so -r {} -f {}".format(fpv_size,fpv_fps), "-o","/root/K9/mjpg_streamer/output_http.so -w /root/K9/mjpg_streamer/www")
+      pmjpg = subprocess.Popen(cmd)
+      if pmjpg.poll() == None:
+        out+= "Spawned mjpg_streamer with {}@{} PID: {}\n".format(fpv_size,fpv_fps,pmjpg.pid)
+        videomode = "{}@{}".format(fpv_size,fpv_fps)
+      else:
+        out+= "Failed to start mjpg_streamer"
+        videomode = "Failed"
+      return out
+ 
 #==============UDP INIT====================
 print ("spinal interface daemon for K-9 starting");
 servsock = socket.socket(socket.AF_INET, # Internet
@@ -297,7 +315,7 @@ while True:
 
   sys.stdout.write(str(addr))
   sys.stdout.flush()
-
+  out = ''
   request = data.split(' ');
   CMD = request.pop(0) 
   CMD = CMD.strip("\n")
@@ -321,28 +339,26 @@ while True:
   elif CMD == "CAM":
     if request[0] == 'RES':
       if 'pmjpg' in globals():
-        if pmjpg.Poll() == None:
+        if pmjpg.poll() == None:
           pmjpg.kill()
-
-      (fpv_size,fpv_fps)=request[0].split(@)
-      cmd = ("/root/K9/mjpg_streamer/mjpg_streamer", "-i\"/root/K9/mjpg_streamer/input_uvc.so -r {} -f {}\"".config(fpv_size,fpv_fps), " -o \"/root/K9/mjpg_streamer/output_http.so -w /root/K9/mjpg_streamer/www\"")
-      print cmd
-      pmjpg = subprocess.Popen(cmd)
-      if pmjpg.Poll() == None:
-        print "Spawned mjpg_streamer with {}@{} PID: {}".config(fpv_size,fpv_fps,pmjpg.pid)
-      pass
+          videomode = "OFF"
+          t = threading.Timer(2.0,run_mjpg,[request[1]])
+	  t.start() 
+	else:
+	  out += run_mjpg(request[1])
+      else: out += run_mjpg(request[1])
     elif request[0] == 'OFF':
       if 'pmjpg' in globals():
-        if pmjpg.Poll() == None:
+        if pmjpg.poll() == None:
           pmjpg.kill()
-      pass
+      videomode = "OFF"
     elif request[0] == 'ZOOM' and request[1] == 'OFF' :
       pass
     elif request[0] == 'ZOOM' and request[1] == 'ON' :
       pass
   else:
     out += "unknown command " + CMD + "\n"
-
+ 
   print (out)
 #  send ("command done:" + out, addr);
 
