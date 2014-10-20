@@ -1,0 +1,251 @@
+#:import pilot pilot
+<Widget>:
+#    canvas.after:
+#        Line:
+#            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+#            dash_offset: 5
+#            dash_length: 3
+
+<TaintedLabel@Label>:
+    canvas.before:
+        Color:
+            rgba: 0.1, 0.1, 0.1, 0.4
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+    background_color: (0.3, 0.3, 0.3, 1)        
+<MainTabs>:
+    size_hint: 1, 1
+    pos_hint: {'center_x': .5, 'center_y': .5}
+    do_default_tab: False
+    log_box: log_box
+    servo1: servo1
+    servo2: servo2
+    servo1label: servo1label
+    servo2label: servo2label
+    statslabel: statslabel
+    label1:label1
+    joy1:joy1
+    cal_trackrotate:cal_trackrotate
+    cal_trackmove:cal_trackmove
+    bVid:bVid
+    bCam:bCam
+    fpvideo:fpvideo
+
+    TabbedPanelItem:
+        text: 'Control'
+        border: [1, 1, 1, 1]
+
+
+        FloatLayout:
+            Video:
+                id:fpvideo
+                state: 'stop'
+                opacity: 0
+            Joystick:
+                size: '300sp','300sp'
+                pos_hint: {'right': 1, 'y': 0}
+#                pos: root.width - self.width, 0
+                size_hint: (None, None)
+                id: joy1			
+                border: [1, 1, 1, 1]
+                on_pos: root.TracksMove ()
+                on_touch_up: root.TracksStop ()
+
+            BoxLayout:    
+                BoxLayout:
+                    size_hint: None, 1
+                    width: '100sp'
+
+                    orientation: 'vertical'        
+                    TaintedLabel:
+                        text: 'l1'
+                        id: label1
+                        size_hint: 1, .7
+                        halign: 'right'
+                        valign: 'top'
+                        font_size: '13sp'
+                        text_size: self.size
+                        background_color: (1, 1, 1, 1)        
+                    TaintedLabel:
+                        text: 'Head ^v'
+                        size_hint: 1, .08
+                        pos_hint: {'center_x': 0.5, 'top':1}
+                        id: servo1label
+                        font_size: '14sp'
+                    FancySlider:
+                        id: servo1
+                        filled: False
+                        step: 2
+                        size_hint: None, 1
+                        width: '30sp'
+                        range: 1, 180
+                        value: 90
+                        on_value: root.SetServo1()
+                        orientation: 'vertical'
+                        pos_hint: {'center_x': 0.5}
+
+                BoxLayout:
+                    orientation: 'vertical'        
+                    BoxLayout:
+                        orientation: 'horizontal'        
+                        size_hint: (1, None)
+                        height: '30sp'
+                        ToggleButton:
+                            id:bVid
+                            size: '30sp','30sp'
+                            size_hint: (None, None)
+                            text: '|>'
+                            on_press: root.VideoPlayerButton ()
+                            opacity: 0.5
+                            border: [0, 0, 0, 0]
+                        Spinner:
+                            text:'Camera ???'
+                            values: ('854x480@25','1024x576@25', '1280x720@25','1920x1080@25','854x480@15','1024x576@15', '1280x720@15','1920x1080@15','Camera off')
+                            size_hint: (None, None)
+                            size: '110sp','30sp'
+                            id: bCam
+                            on_text: root.SetCamera()
+                            opacity: 0.5
+                            border: [0, 0, 0, 0]
+                        ToggleButton:
+                            id:bZoom
+                            size: '30sp','30sp'
+                            size_hint: (None, None)
+                            text: 'Z'
+                            on_press: pilot.send ("CAM ZOOM ON") if self.state == 'down' else pilot.send ("CAM ZOOM OFF")
+                            disabled: root.bVid.state == 'normal'
+                            opacity: 0.5
+                            border: [0, 0, 0, 0]
+                        ToggleButton:
+                            id:bCall
+                            size: '60sp','30sp'
+                            size_hint: (None, None)
+                            text: 'Call'
+                            on_press: pilot.send ("CALL ON") if self.state == 'down' else pilot.send ("CALL OFF")
+                            opacity: 0.5
+                            border: [0, 0, 0, 0]
+
+                        Spinner:
+                            text:'Sonar ???'
+                            values: ('Failsafe 0.2','Failsafe 0.4', 'Failsafe off','Sonar off')
+                            size_hint: (None, None)
+                            size: '110sp','30sp'
+                            id: bSon
+                            on_text: pilot.send ("SON " + self.text)
+                            opacity: 0.5
+                            border: [0, 0, 0, 0]
+
+                    BoxLayout:
+                        orientation: 'horizontal'        
+                        size_hint: (1, None)
+                        height: '30sp'
+                        Label:
+                            text: 'Head <>'
+                            size: '80sp','30sp'
+                            size_hint: (None, None)
+                            id: servo2label
+                            halign: 'right'
+                            valign: 'middle'
+                            font_size: '14sp'
+                            text_size: self.size
+
+                        FancySlider:
+                            id: servo2
+                            filled: False
+                            step: 2
+                            size_hint: (1, None)
+                            height: '30sp'
+                            range: 50, 105
+                            value: 90		        
+                            on_value: root.SetServo2() 
+                            orientation: 'horizontal'
+                            pos_hint: {'center_x': 0.5, 'top':1}
+                            background_color: (0, 0, 0, 1)
+                    TaintedLabel:
+                        text: '--'
+                        id: statslabel
+                        font_size: '14sp'
+                        size_hint: 1, .05
+                        text_size: self.size
+                        halign: 'right'
+                    Label:
+                        text: ''
+                        id: justspace
+                        font_size: '14sp'
+                        size_hint: 1, 1
+                        text_size: self.size
+                        halign: 'right'
+
+
+    TabbedPanelItem:
+        text: 'Log'
+        BoxLayout:
+            orientation: 'vertical'
+            TextInput:
+                background_color: (1, 1, 1, .5)        
+                size_hint: 1, .7
+                readonly: True
+                font_size: 16   
+                id: log_box        
+    TabbedPanelItem:
+        text: 'Calibration'
+        GridLayout:
+            size_hint: 1, 1
+            rows: 5
+            cols: 2
+            Label:
+                text: 'Tracks move'
+                size_hint: 1, 1
+            Slider:
+                id: cal_trackmove
+                step: 1
+                size_hint: 1, 1
+                range: 1, 255
+                value: 255
+                orientation: 'horizontal'
+            Label:
+                text: 'Tracks rotate factor'
+                size_hint: 1, 1
+            Slider:
+                id: cal_trackrotate
+                step: 1
+                size_hint: 1, 1
+                range: 1, 100
+                value: 100
+                orientation: 'horizontal'
+            Label:
+                text: 'Dead zone'
+                size_hint: 1, 1
+            Slider:
+                id: cal_trackdeadzone
+                step: 1
+                size_hint: 1, 1
+                range: 1, 255
+                value: 200
+                orientation: 'horizontal'
+                disabled: True
+            FancySlider:
+                size_hint: 1, 0.2
+                index: 1
+                min: 0 
+                value: 50
+                max: 100
+                step: 1
+            FancySlider:
+                size_hint: 1, 0.2
+                index: 1
+                min: 0 
+                value: 50
+                max: 100
+                step: 1
+                color: (1, 0, 0, 1)
+            FancySlider:
+                size_hint: 1, 0.1
+                index: 1
+                min: 0 
+                value: 50
+                max: 100
+                step: 1
+       

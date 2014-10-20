@@ -1,0 +1,40 @@
+<Joystick>:
+    joycap:joycap
+    coordslabel:coordslabel
+    canvas:
+        Color:
+            rgba: 0, 0, 0, 0
+        Rectangle:
+            pos: self.pos
+            size: self.size
+        Color:
+            rgba: 0, 1, 0, .1
+        Rectangle:
+            pos: self.x, self.center_y - (self.height*self.deadzone)
+            size: self.width , (self.height*self.deadzone*2)
+        Rectangle:
+            pos: self.center_x - (self.width*self.deadzone), self.y
+            size: self.width*0.1, self.height 
+        Color:
+            rgba: 1, 1, 1, .7
+        Line:
+            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+
+
+    TaintedLabel:
+        id: joycap
+        text: '+'
+        size: '10mm', '10mm'
+        center_x: self.parent.center_x 
+        center_y: self.parent.center_y
+
+    TaintedLabel:
+        id: coordslabel
+        text: '--'
+        x: self.parent.x 
+        y: self.parent.y
+        font_size: '14sp'
+        height:'18sp'
+        width:'150sp'
+        halign: 'left'
+        text_size: self.size
