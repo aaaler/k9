@@ -336,6 +336,7 @@ while True:
       else: sonarfailsafe = float(request[1])
     elif request[0] == 'Sonar' and request[1] == 'off' :
       sonaron = False
+      sonarfailsafe = 0
   elif CMD == "CAM":
     if request[0] == 'RES':
       if 'pmjpg' in globals():
@@ -353,9 +354,9 @@ while True:
           pmjpg.kill()
       videomode = "OFF"
     elif request[0] == 'ZOOM' and request[1] == 'OFF' :
-      pass
+      status = subprocess.call("/usr/bin/v4l2-ctl --set-ctrl=zoom_absolute=1")  
     elif request[0] == 'ZOOM' and request[1] == 'ON' :
-      pass
+      status = subprocess.call("/usr/bin/v4l2-ctl --set-ctrl=zoom_absolute=5")
   else:
     out += "unknown command " + CMD + "\n"
  
