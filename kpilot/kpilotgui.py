@@ -10,11 +10,11 @@ from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicExcept
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
-
-
-import sys
-import pilot
 import time
+import sys
+
+
+import pilot
 from joystick import Joystick
 from fancyslider import FancySlider
 

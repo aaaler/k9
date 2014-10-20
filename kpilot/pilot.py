@@ -13,11 +13,6 @@ stats = {}
 statsdtime = 0;
 laststatstime = time.time();
 
-def dummy( dummy1 = "", dummy2 = ""):
-  pass
-
-def setTrackParam (DIR, speed):
-  pass
 
 def udpreader (dummy1 = "", dummy2=""):
   global udpin, udpout, UDP_IP, UDP_PORT, udpinmsgs, stats, statsdtime, laststatstime
@@ -42,6 +37,7 @@ def udpreader (dummy1 = "", dummy2=""):
 
   
 def trackpoller ():
+#  2do: refactor it 4 new tracks command with 2axis joypad  
   global udpin, udpout, UDP_IP, UDP_PORT, udpinmsgs, direction,speed,rotspeed
   while True:
     while direction != "":

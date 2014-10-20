@@ -4,8 +4,9 @@ from kivy.lang import Builder
 from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicException
 
 Builder.load_file('joystick.kv')
+
 class Joystick(Widget):
-#StencilView
+#StencilView?
 
     jx = 0.;
     jy = 0.;
