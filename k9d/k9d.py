@@ -31,7 +31,7 @@ class K9dApp:
         self.UDP_PORT = 9999
         #sonar
         self.sonaron = True
-        self.sonarfailsafe = 0
+        self.sonarfailsafe = 0.
         #mjpg_streamer related
         self.videomode = 'OFF'
         #track calibration should be here
@@ -42,6 +42,7 @@ class K9dApp:
         self.tracktimeout = time.time()
         self.trackmode = ""
         self.sonardist = 0
+        self.sonarfailsafe_active = False
         #logger
         logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', datefmt='%d%m%Y %H:%M:%S')
         self.logger = logging.getLogger('k9d')
@@ -245,6 +246,10 @@ class K9dApp:
               self.sonardist  = int(HighLen*256 + LowLen);             #Calculate the distance
     #        print ("SONAR H:"+ str( sonardist))
               self.ardustate["Son"]=self.sonardist
+              if float(self.sonardist)/1000 <= self.sonarfailsafe:
+                self.sonarfailsafe_active = True
+                if self.tracky > 0: self.tracks (self.trackx,0):
+                else: self.sonarfailsafe_active = False
             except serial.SerialException:
               self.ardustate["Son"]=65535
               self.logger.info ("Sonar err")
@@ -303,10 +308,16 @@ class K9dApp:
       if self.trackl > 1: self.trackl = 1
       if self.trackr < -1: self.trackr = -1
       if self.trackl < -1: self.trackl = -1
+      if self.sonarfailsafe_active:
+          if self.trackr > 0: self.trackr = 0
+          if self.trackl > 0: self.trackl = 0
+        
       out="8 %0d %0d %0d %0d %0d %0d;" % (self.trackl>0,self.trackl<0,abs(self.trackr)*(255-self.cal_track_min)+self.cal_track_min,self.trackr>0,self.trackr<0,abs(self.trackl)*(255-self.cal_track_min)+self.cal_track_min)
       self.spinal_write(out);
       self.ardustate['trackr'] = self.trackr;
       self.ardustate['trackl'] = self.trackl;
+      self.tracksx = fX
+      self.tracksy = fY
       return "OK"
     
  
