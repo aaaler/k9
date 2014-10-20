@@ -354,9 +354,9 @@ while True:
           pmjpg.kill()
       videomode = "OFF"
     elif request[0] == 'ZOOM' and request[1] == 'OFF' :
-      status = subprocess.call("/usr/bin/v4l2-ctl --set-ctrl=zoom_absolute=1")  
+      status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=1"])  
     elif request[0] == 'ZOOM' and request[1] == 'ON' :
-      status = subprocess.call("/usr/bin/v4l2-ctl --set-ctrl=zoom_absolute=5")
+      status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=5"])
   else:
     out += "unknown command " + CMD + "\n"
  
