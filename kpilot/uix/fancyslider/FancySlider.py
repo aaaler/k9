@@ -3,7 +3,7 @@ from kivy.uix.slider import Slider
 from kivy.lang import Builder
 
 
-Builder.load_file('fancyslider.kv')
+Builder.load_file(r"uix\fancyslider\fancyslider.kv")
 
 
 class FancySlider(Slider):
