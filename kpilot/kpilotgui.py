@@ -15,8 +15,8 @@ import sys
 
 
 import pilot
-from joystick import Joystick
-from fancyslider import FancySlider
+from uix.joystick import Joystick
+from uix.fancyslider import FancySlider
 
 
 

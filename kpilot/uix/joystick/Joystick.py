@@ -3,7 +3,7 @@ from kivy.properties import  NumericProperty, ListProperty
 from kivy.lang import Builder
 from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicException
 
-Builder.load_file('joystick.kv')
+Builder.load_file("uix\joystick\joystick.kv")
 
 class Joystick(Widget):
 #StencilView?
