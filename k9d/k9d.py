@@ -40,6 +40,7 @@ class K9dApp:
        
         #init
         self.ardustate = {}
+        self.ardustate["proxalert"] = False
         self.tracktimeout = time.time()
         self.trackmode = ""
         self.sonardist = 0
@@ -264,9 +265,17 @@ class K9dApp:
     #        print ("SONAR H:"+ str( sonardist))
               self.ardustate["Son"]=self.sonardist
               if float(self.sonardist)/1000 <= self.sonarfailsafe:
-                self.sonarfailsafe_active = True
-                if self.tracky > 0: self.tracks (self.trackx,0)
-                else: self.sonarfailsafe_active = False
+                if not self.sonarfailsafe_active:
+                    self.sonarfailsafe_active = True
+                    self.ardustate["proxalert"] = True
+                    self.log.info ("Sonar failsafe activated at distance {} meters".format(float(self.sonardist)/1000))
+                if self.tracksy > 0: self.tracks (self.tracksx,0)
+              else: 
+                if self.sonarfailsafe_active:
+                    self.log.info ("Sonar failsafe deactivated at distance {} meters".format(float(self.sonardist)/1000))
+                    self.sonarfailsafe_active = False
+                    self.ardustate["proxalert"] = False
+ 
             except serial.SerialException:
               self.ardustate["Son"]=65535
               self.log.info ("Sonar err")
