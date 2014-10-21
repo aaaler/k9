@@ -10,6 +10,7 @@ import os
 import subprocess
 import re
 import logging
+import logging.handlers
 
 class K9dApp:
     #Compile RE for iwconfig ouput parsing
@@ -43,17 +44,9 @@ class K9dApp:
         self.trackmode = ""
         self.sonardist = 0
         self.sonarfailsafe_active = False
-        #logger
-        logging.basicConfig(format='%(asctime)s [%(levelname)s]: %(message)s', datefmt='%d%m%Y %H:%M:%S')
-        self.logger = logging.getLogger('k9d')
-        self.logger.setLevel(logging.DEBUG)
-        logch = logging.StreamHandler()         # create console handler 
-#        logch.setLevel(logging.DEBUG)
-#       logformatter = logging.Formatter('')
-#        logch.setFormatter(logformatter)
-#        self.logger.addHandler(logch)
+        self.log_init()
         #==============UDP INIT====================
-        self.logger.info ("spinal interface daemon for K-9 starting");
+        self.log.info ("spinal interface daemon for K-9 starting");
         self.servsock = socket.socket(socket.AF_INET, # Internet
                               socket.SOCK_DGRAM) # UDP
         self.servsock.bind((self.UDP_IP, self.UDP_PORT))
@@ -63,14 +56,14 @@ class K9dApp:
         try:
           self.spinal = serial.Serial('/dev/ttyACM0', 115200, timeout=0.5)
         except:
-          self.logger.error("Could not open port for spinal")
+          self.log.error("Could not open port for spinal")
           sys.exit(1)
         
         
         try:
           self.sonar = serial.Serial('/dev/ttyS1', 9600, timeout=0.5)
         except:
-          self.logger.error("Could not open port for sonar")
+          self.log.error("Could not open port for sonar")
           sys.exit(1)
         
         #===========THREADING INIT=================
@@ -92,13 +85,35 @@ class K9dApp:
         self.tSonar.start()
             
         
-        self.logger.info ("ready to play");
+        self.log.info ("ready to play");
         self.spinal.write("1;");
-        
+
+    def log_init(self):
+         
+        if hasattr(self, 'log'):
+            self.log.removeHandler(self.stdoutloghandler)
+            self.log.removeHandler(self.udploghandler)
+	else:
+            self.log = logging.getLogger('k9d')
+        self.stdoutloghandler = logging.StreamHandler(sys.stdout)
+        self.stdoutloghandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s"))
+        self.stdoutloghandler.setLevel(logging.DEBUG)
+        self.udploghandler = logging.handlers.DatagramHandler(self.addr, self.UDP_PORT)
+        self.udploghandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s"))
+        self.udploghandler.setLevel(logging.DEBUG)
+
+        self.log.setLevel(logging.DEBUG)
+        self.log.addHandler(self.stdoutloghandler)
+        self.log.addHandler(self.udploghandler)
+ 
 
     def mainloop (self):          
       while True:
-          data,(self.addr,self.port) = self.servsock.recvfrom(1024) # buffer size is 1024 bytes   
+          data,(addr,self.port) = self.servsock.recvfrom(1024) # buffer size is 1024 bytes   
+          if addr != self.addr:
+            self.log.warn ("New client ip: {}".format(addr))
+            self.addr = addr
+            self.log_init()
           out = "{}>{} &".format(str(self.addr),data)
 
           request = data.split(' ');
@@ -130,8 +145,9 @@ class K9dApp:
                 if self.pmjpg.poll() == None:
                   self.pmjpg.kill()
                   self.videomode = "OFF"
-                  t = threading.Timer(2.0,self.run_mjpg,[self,request[1]])
+                  t = threading.Timer(2.0,self.run_mjpg,[request[1]])
                   t.start() 
+                  out += " deffered mjpg run"
                 else: 
                   out += self.run_mjpg(request[1])
               else: 
@@ -151,9 +167,10 @@ class K9dApp:
               out += "OK"
 
           else:
-            out += "unknown command " + CMD + ""
+            self.log.warn ("unknown command " + CMD + "")
+            continue
          
-          self.logger.info (out)
+          self.log.debug (out)
         #  send ("command done:" + out, addr);
 
     def send (self,body,ip) :
@@ -163,7 +180,7 @@ class K9dApp:
 
     def spinal_write (self,data):
         debugmsg = "UART< {}".format(data)
-        self.logger.debug(debugmsg)
+        self.log.debug(debugmsg)
         return self.spinal.write(data)
     
     def from_spinal (self,pkt):
@@ -203,7 +220,7 @@ class K9dApp:
         self.ardustate['A2']=str(ord(stat[6]) + (ord(stat[5])<<8))
         statusdebug += ("a3:" + str(ord(stat[8]) + (ord(stat[7])<<8)) + "")
         self.ardustate['A3']=str(ord(stat[8]) + (ord(stat[7])<<8))
-        self.logger.info (statusdebug);
+#        self.log.debug (statusdebug);
         self.stateupload()
         
 
@@ -248,11 +265,11 @@ class K9dApp:
               self.ardustate["Son"]=self.sonardist
               if float(self.sonardist)/1000 <= self.sonarfailsafe:
                 self.sonarfailsafe_active = True
-                if self.tracky > 0: self.tracks (self.trackx,0):
+                if self.tracky > 0: self.tracks (self.trackx,0)
                 else: self.sonarfailsafe_active = False
             except serial.SerialException:
               self.ardustate["Son"]=65535
-              self.logger.info ("Sonar err")
+              self.log.info ("Sonar err")
               pass
           else:self.ardustate["Son"]=65534
           time.sleep(.05)
@@ -276,7 +293,7 @@ class K9dApp:
               except IndexError: sbuff +=  state
             if data == "\n":
                 self.from_spinal(sbuff)
-                self.logger.debug("UART> {}".format(sbuff[:-1]))
+                self.log.debug("UART> {}".format(sbuff[:-1]))
                 sbuff=""
     
     def cmdtimeout(self):
@@ -285,7 +302,7 @@ class K9dApp:
           while self.trackmode != "":
             if self.tracktimeout < time.time():
               self.trackstop()
-              self.logger.info ("Timout alert STOP.")
+              self.log.info ("Timout alert STOP.")
           time.sleep(0.1)
 
 
@@ -338,11 +355,11 @@ class K9dApp:
         self.pmjpg = subprocess.Popen(cmd)
         if self.pmjpg.poll() == None:
           self.videomode = "{}@{}".format(fpv_size,fpv_fps)
-          out += "Spawned mjpg_streamer with {}@{} PID: {}".format(fpv_size,fpv_fps,self.pmjpg.pid)
+          self.log.info ("Spawned mjpg_streamer with {}@{} PID: {}".format(fpv_size,fpv_fps,self.pmjpg.pid))
         else:
-          out += "Failed to start mjpg_streamer"
+          self.log.error ("Failed to start mjpg_streamer with {}".format(self.videomode))
           self.videomode = "Failed"
-        return out
+        return "OK" 
   
 
 if __name__ == "__main__":
