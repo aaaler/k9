@@ -3,6 +3,7 @@ import socket
 import threading
 import time
 import cPickle
+import logging
 
 udpinmsgs = []
 direction = ""
@@ -18,7 +19,17 @@ def udpreader (dummy1 = "", dummy2=""):
   global udpin, udpout, UDP_IP, UDP_PORT, udpinmsgs, stats, statsdtime, laststatstime
   try:
         data, addr = udpin.recvfrom(8192)#buffer size 
+#        log.debug(u"DATA IS:{} const is:{}".format(data[0:3].encode('string_escape'),("\x00\x00\x01\xd1".decode('string_escape')).encode('string_escape')))
         if data[0:20] == "command done:msg was" : 
+           return True
+        if data[0:14] == "UART<OK TRACKS" : 
+           return True
+        if data[0:13] == "UART<OK SERVO" : 
+           return True
+        if data[0:3] == "\x00\x00\x01".decode('string_escape') : 
+           rec = logging.makeLogRecord(cPickle.loads(data[4:]))
+           rec.msg = unicode(rec.msg, 'utf-8')
+           log.handle(rec)
            return True
         elif data[0] == "#" : 
            # found stats in flow
@@ -28,10 +39,9 @@ def udpreader (dummy1 = "", dummy2=""):
            stats['size'] = len (data)
            #udpinmsgs.append(str(cPickle.loads (data[1:])))
            return True
-        udpinmsgs.append(str(data))       
+        udpinmsgs.append(str(data))      
+        log.warn (u"Unhandled packet from {}:{}".format(addr,data.encode('string_escape')))
         return str(data)
-        sys.stdout.write("udp:" + str(data) + "\n")
-        sys.stdout.flush()        
   except socket.error:
         return False
 
@@ -48,7 +58,7 @@ def trackpoller ():
       elif direction == "STOP":
         data = direction
         direction = ""        
-      else: print ("TP: unknown direction")
+      else: log.info(u"TP: unknown direction")
       udpinmsgs.append(data);      
       send(data)
       time.sleep (0.3)
@@ -63,11 +73,12 @@ def udp_init ():
   UDP_IN_PORT = 9999
   udpout = socket.socket(socket.AF_INET, # Internet
                socket.SOCK_DGRAM) # UDP
+
   udpin  = socket.socket(socket.AF_INET, # Internet
                         socket.SOCK_DGRAM) # UDP
   udpin.setblocking(0)
   udpin.bind(("0.0.0.0", UDP_IN_PORT))
-
+  log.info (u"Listening for UDP:{}".format(UDP_IN_PORT))
 
 #  UDP reader go to kivytimers
 #  r = threading.Thread(target=udpreader)
@@ -89,10 +100,6 @@ def init(logger) :
   timeout = 500 
   servo1 = 90
   servo2 = 90
-  
-  print ("UDP target IP:", UDP_IP)
-  print ("UDP target port:", UDP_OUT_PORT)
-  print ("UDP local port:", UDP_IN_PORT)
 
 
 def send (body) :
@@ -178,6 +185,6 @@ if __name__ == '__main__':
 
 
 
-      print (out);
+      log.info (out);
 
 

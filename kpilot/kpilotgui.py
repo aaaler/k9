@@ -23,7 +23,6 @@ from uix.fancyslider import FancySlider
 
 
 class MainTabs(TabbedPanel):
-    log_box = ObjectProperty()
     mainview_log = ObjectProperty()
     speed = ObjectProperty()
     rot_speed = ObjectProperty()
@@ -41,11 +40,9 @@ class MainTabs(TabbedPanel):
 
     def TracksMove (self):
         pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))       
-#        print ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))
 
     def TracksStop (self):
         pilot.send ("TRACKS 0 0")
-#        print ("Tracks stop")
 
     def SetServo1 (self, smth=""): 
         pilot.send ("SERVO 1 %0d" % self.servo1.value)
@@ -57,13 +54,13 @@ class MainTabs(TabbedPanel):
 
     def VideoPlayerButton (self, *args):
         if self.bVid.state == 'normal':
-          self.log_box.text += "video stop \n"
+          self.log.info (u"Video player stoping")
           self.bVid.text = '|>'
           self.fpvideo.state = 'stop'
           self.fpvideo.source = ''
           self.fpvideo.opacity = 0          
         elif self.bVid.state == 'down':
-          self.log_box.text += "video start \n"                    
+          self.log.info (u"Video player starting")
           self.fpvideo.source = 'http://192.168.0.99:8080/?action=stream'
           self.bVid.text = '||'
           self.fpvideo.state = 'play'
@@ -75,13 +72,14 @@ class MainTabs(TabbedPanel):
         pilot.send ("CAM OFF")
         self.bVid.state = 'normal'
         self.VideoPlayerButton (self)
+        self.log.info (u"Camera off requested")
       else:  
         pilot.send ("CAM RES " + self.bCam.text) 
         self.bVid.state = 'normal'
         self.VideoPlayerButton (self)
         self.bVid.state = 'down'
         Clock.schedule_once(self.VideoPlayerButton, 4)
-
+        self.log.info (u"Camera requested with {} resolution".format(self.bCam.text))
 
 
     def logupdate(self, dt):
@@ -99,9 +97,25 @@ class MainTabs(TabbedPanel):
 #bad idea really, undefined behavior.
 
         except KeyError as e: self.statslabel.text = "not yet " + e.message
-        logbuffer = self.logstream.getvalue() 
-        logbuflines = logbuffer.split(u"\n")
-        logbuffer = "\n".join(logbuflines[-10:])
+        logbuffer = ''
+        
+        for line in (self.logstream.getvalue()).split(u"\n")[-15:]:
+          if line.find('DEBUG') > 0:
+             color = "AAAAAA"
+          elif line.find('INFO') > 0:
+             color = "AAFFAA"
+#          elif line.find('NOTICE') > 0:
+#             color = "AAAAFF"         
+          elif line.find('WARN') > 0:
+             color = "EEEE99"
+          elif line.find('ERROR') > 0:
+             color = "FFAAAA"
+          elif line.find('CRIT') > 0:
+             color = "FFAAAA"
+          else:
+             color = "FFFFFF"
+          if line != "": logbuffer += "[color={}]{}[/color]\n".format(color,line)
+
         self.mainview_log.text = logbuffer[:-1] #last char is always cr
 
 #        while len(pilot.udpinmsgs) > 0 :
@@ -122,7 +136,7 @@ class kPilotApp(App):
         self.mainform.logstream = io.StringIO()
         self.mainform.logstreamhandler = logging.StreamHandler(self.mainform.logstream)
         self.mainform.logstreamhandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s","%H:%M:%S"))
-        self.mainform.logstreamhandler.setLevel(logging.DEBUG)
+        self.mainform.logstreamhandler.setLevel(logging.INFO)
         self.mainform.consoleloghandler = logging.StreamHandler(sys.stdout)
         self.mainform.consoleloghandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s"))
         self.mainform.consoleloghandler.setLevel(logging.DEBUG)
