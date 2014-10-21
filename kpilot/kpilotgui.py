@@ -1,5 +1,4 @@
 from kivy.app import App
-from kivy.uix.tabbedpanel import TabbedPanel
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
 from kivy.uix.stencilview import StencilView
@@ -22,7 +21,7 @@ from uix.fancyslider import FancySlider
 
 
 
-class MainTabs(TabbedPanel):
+class RootLayout(FloatLayout):
     mainview_log = ObjectProperty()
     speed = ObjectProperty()
     rot_speed = ObjectProperty()
@@ -131,7 +130,7 @@ class kPilotApp(App):
         #init config
         self.desktop = bool(Config.get('kivy', 'desktop'))
         #init gui
-        self.mainform = MainTabs()
+        self.mainform = RootLayout()
         #init logger
         self.mainform.logstream = io.StringIO()
         self.mainform.logstreamhandler = logging.StreamHandler(self.mainform.logstream)
