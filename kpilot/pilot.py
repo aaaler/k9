@@ -80,20 +80,24 @@ def udp_init ():
 #  ttp.start()
 # 
 
-def init() :
+def init(logger) :
+  global log
+  log = logger
   udp_init()
   speed = 130
   rotspeed = 130
   timeout = 500 
   servo1 = 90
   servo2 = 90
+  
   print ("UDP target IP:", UDP_IP)
   print ("UDP target port:", UDP_OUT_PORT)
   print ("UDP local port:", UDP_IN_PORT)
 
 
 def send (body) :
-        return udpout.sendto(body, (UDP_IP, UDP_OUT_PORT))
+    log.debug (u"UDP {}:{}< {}".format(UDP_IP, UDP_OUT_PORT,body))
+    return udpout.sendto(body, (UDP_IP, UDP_OUT_PORT))
 
 
 

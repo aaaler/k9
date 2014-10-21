@@ -12,7 +12,8 @@ from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
 import time
 import sys
-
+import logging
+import io
 
 import pilot
 from uix.joystick import Joystick
@@ -23,15 +24,23 @@ from uix.fancyslider import FancySlider
 
 class MainTabs(TabbedPanel):
     log_box = ObjectProperty()
+    mainview_log = ObjectProperty()
     speed = ObjectProperty()
     rot_speed = ObjectProperty()
     statslabel = ObjectProperty()
     label1 = ObjectProperty()
     fpvideo = ObjectProperty()
     bVid = ObjectProperty()
+    log = ObjectProperty()
+    logstream = io.StringIO()
+#    logstream = ObjectProperty()
+    
+#    def on_logstream(self, *args):
+#        self.mainview_log.text = self.logstream.getvalue()
+        
 
     def TracksMove (self):
-        pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))
+        pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))       
 #        print ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))
 
     def TracksStop (self):
@@ -90,6 +99,11 @@ class MainTabs(TabbedPanel):
 #bad idea really, undefined behavior.
 
         except KeyError as e: self.statslabel.text = "not yet " + e.message
+        logbuffer = self.logstream.getvalue() 
+        logbuflines = logbuffer.split(u"\n")
+        logbuffer = "\n".join(logbuflines[-10:])
+        self.mainview_log.text = logbuffer[:-1] #last char is always cr
+
 #        while len(pilot.udpinmsgs) > 0 :
 #            try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
 #            except UnicodeDecodeError: self.log_box.text += "[...]"
@@ -98,14 +112,32 @@ class MainTabs(TabbedPanel):
 class kPilotApp(App):   
     mainform = ObjectProperty()
     desktop = BooleanProperty()
+
     def build(self):
-        self.mainform = MainTabs()
-        pilot.init()
+        #init config
         self.desktop = bool(Config.get('kivy', 'desktop'))
+        #init gui
+        self.mainform = MainTabs()
+        #init logger
+        self.mainform.logstream = io.StringIO()
+        self.mainform.logstreamhandler = logging.StreamHandler(self.mainform.logstream)
+        self.mainform.logstreamhandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s","%H:%M:%S"))
+        self.mainform.logstreamhandler.setLevel(logging.DEBUG)
+        self.mainform.consoleloghandler = logging.StreamHandler(sys.stdout)
+        self.mainform.consoleloghandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s"))
+        self.mainform.consoleloghandler.setLevel(logging.DEBUG)
+        self.mainform.log = logging.getLogger('Pilot')
+        self.mainform.log.setLevel(logging.DEBUG)
+        self.mainform.log.addHandler(self.mainform.logstreamhandler)
+        self.mainform.log.addHandler(self.mainform.consoleloghandler)
+        #init backend
+        pilot.init(self.mainform.log)
+        #init sheduler
         Clock.schedule_interval(self.mainform.logupdate, .1)
 #        Clock.schedule_interval(pilot.udpreader, .05)
-        self.mainform.log_box.text = "Running client on Python " + sys.version + "\n"
-        self.mainform.log_box.text += "K-9 Greets the master :-)\n"
+
+
+        self.mainform.log.info (u"Running client on Python " + sys.version)
         return self.mainform
     def on_pause(self):
       # Here you can save data if needed
