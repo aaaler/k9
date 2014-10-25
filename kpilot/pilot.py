@@ -103,7 +103,7 @@ def init(logger) :
 
 
 def send (body) :
-    log.debug (u"UDP {}:{}< {}".format(UDP_IP, UDP_OUT_PORT,body))
+    log.debug (u"UDP {}:{}< {}".format(UDP_IP, UDP_OUT_PORT,body.encode('unicode_escape')))
     return udpout.sendto(body, (UDP_IP, UDP_OUT_PORT))
 
 
