@@ -15,6 +15,7 @@
             size: self.size
 
     background_color: (0.3, 0.3, 0.3, 1)        
+
 <RootLayout>:
     size_hint: 1, 1
     pos_hint: {'center_x': .5, 'center_y': .5}
@@ -29,7 +30,7 @@
     bCam:bCam
     fpvideo:fpvideo
     mainview_log:mainview_log
-
+    console_input:console_input
 
 
     FloatLayout:
@@ -173,5 +174,20 @@
                     halign: 'left'
                     valign: 'bottom'
                     markup: True
+
+                ConsoleInput:
+                    text: ''
+                    size_hint: (1, None)
+                    height: '32sp'
+#                    border: [0, 0, 0, 0]
+                    id: console_input
+                    on_text_validate: root.ConsoleCmd(self.text)
+                    opacity: 0.2
+                    multiline: False
+                    background_color: (0.3, 0.3, 0.3, 1)        
+                    foreground_color: (1, 1, 1, 1)        
+                    cursor_color: (1, 1, 1, 1)        
+                    selection_color: (0,.5,0,.4)
+
 
 

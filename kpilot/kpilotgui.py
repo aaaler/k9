@@ -1,3 +1,10 @@
+import time
+import sys
+import logging
+import io
+import cPickle as pickle
+import string
+
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
@@ -9,14 +16,11 @@ from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicExcept
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
-import time
-import sys
-import logging
-import io
 
 import pilot
 from uix.joystick import Joystick
 from uix.fancyslider import FancySlider
+from uix.consoleinput import ConsoleInput
 
 
 
@@ -30,12 +34,35 @@ class RootLayout(FloatLayout):
     fpvideo = ObjectProperty()
     bVid = ObjectProperty()
     log = ObjectProperty()
+    console_input  = ObjectProperty()
     logstream = io.StringIO()
 #    logstream = ObjectProperty()
     
 #    def on_logstream(self, *args):
 #        self.mainview_log.text = self.logstream.getvalue()
-        
+
+    def ConsoleCmd (self, data):
+        data = unicode (data,'utf-8');
+        if data == "" : return False
+        self.log.debug (u"Console input {}".format(data))
+        request = data.split(' ');
+        cmd = request.pop(0).lower() 
+        cmd = cmd.strip("\n")
+        if (data[0:1] == '-'):
+            pilot.send ("SAY "+pickle.dumps(data[1:]))
+            self.log.info (u"Pronouncing {}".format(data[1:])) 
+        elif cmd == 'q' or cmd == 'quit':
+            App.get_running_app().stop()
+        elif cmd == 'send':
+            pkt = ' '.join(request)
+            pilot.send (pkt)
+            self.log.info (u"Sent: {}".format(pkt))
+
+        else:
+            self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))
+
+        self.console_input.text = ''
+        return True
 
     def TracksMove (self):
         pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))       
@@ -96,7 +123,7 @@ class RootLayout(FloatLayout):
 #bad idea really, undefined behavior.
 
         except KeyError as e: self.statslabel.text = "not yet " + e.message
-        logbuffer = ''
+        logbuffer = u""
         
         for line in (self.logstream.getvalue()).split(u"\n")[-15:]:
           if line.find('DEBUG') > 0:
@@ -113,7 +140,7 @@ class RootLayout(FloatLayout):
              color = "FFAAAA"
           else:
              color = "FFFFFF"
-          if line != "": logbuffer += "[color={}]{}[/color]\n".format(color,line)
+          if line != "": logbuffer += u"[color={}]{}[/color]\n".format(color,line)
 
         self.mainview_log.text = logbuffer[:-1] #last char is always cr
 
@@ -125,6 +152,29 @@ class RootLayout(FloatLayout):
 class kPilotApp(App):   
     mainform = ObjectProperty()
     desktop = BooleanProperty()
+    printset = set(string.printable)
+
+    def __init__(self, **kwargs):
+        super(kPilotApp, self).__init__(**kwargs)
+        self._keyboard_init()
+
+    def _keyboard_init(self):
+        self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+        self._keyboard.bind(on_key_down = self._on_keyboard_down)
+
+    def _keyboard_closed(self):
+        self.mainform.log.debug (u"Keyboard closed")
+        self._keyboard.unbind(on_key_down = self._on_keyboard_down)
+        self._keyboard = None
+
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+        if set(text).issubset(self.printset) and text != "\r":
+            self.mainform.console_input.text += text
+        self.mainform.console_input.focus = True
+
+        return True
+
+
 
     def build(self):
         #init config
