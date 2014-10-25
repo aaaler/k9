@@ -45,6 +45,7 @@ class K9dApp:
         self.trackmode = ""
         self.sonardist = 0
         self.sonarfailsafe_active = False
+        self.festivalup = False
         self.log_init()
         #==============UDP INIT====================
         self.log.info ("spinal interface daemon for K-9 starting");
@@ -109,69 +110,95 @@ class K9dApp:
  
 
     def mainloop (self):          
-      while True:
-          data,(addr,self.port) = self.servsock.recvfrom(1024) # buffer size is 1024 bytes   
-          if addr != self.addr:
-            self.log.warn ("New client ip: {}".format(addr))
-            self.addr = addr
-            self.log_init()
-          out = "{}>{} &".format(str(self.addr),data)
-
-          request = data.split(' ');
-          CMD = request.pop(0) 
-          CMD = CMD.strip("\n")
-          if CMD == "STOP":
-            self.trackstop()
-            out += "OK"
-          elif CMD == "EXEC":
-            self.spinal_write (' '.join(request))
-            out += "OK"
-          elif CMD == "TRACKS":
-            out += self.tracks(request[0],request[1]);
-          elif CMD == "SERVO":
-            self.servo (request[0],request[1]);
-            out += "OK"
-          elif CMD == "SON":
-            if request[0] == 'Failsafe':
-              self.sonaron = True
-              if request[1] == 'off': self.sonarfailsafe = 0
-              else: self.sonarfailsafe = float(request[1])
-            elif request[0] == 'Sonar' and request[1] == 'off' :
-              self.sonaron = False
-              self.sonarfailsafe = 0
-            out += "OK"
-          elif CMD == "CAM":
-            if request[0] == 'RES':
-              if hasattr(self, 'pmjpg'):
-                if self.pmjpg.poll() == None:
-                  self.pmjpg.kill()
-                  self.videomode = "OFF"
-                  t = threading.Timer(2.0,self.run_mjpg,[request[1]])
-                  t.start() 
-                  out += " deffered mjpg run"
+        while True:
+            data,(addr,self.port) = self.servsock.recvfrom(1024) # buffer size is 1024 bytes   
+            if addr != self.addr:
+              self.log.warn ("New client ip: {}".format(addr))
+              self.addr = addr
+              self.log_init()
+            out = "{}>{} &".format(str(self.addr),data)
+  
+            request = data.split(' ');
+            CMD = request.pop(0) 
+            CMD = CMD.strip("\n")
+            if CMD == "STOP":
+              self.trackstop()
+              out += "OK"
+            elif CMD == "EXEC":
+              self.spinal_write (' '.join(request))
+              out += "OK"
+            elif CMD == "TRACKS":
+              out += self.tracks(request[0],request[1]);
+            elif CMD == "SERVO":
+              self.servo (request[0],request[1]);
+              out += "OK"
+            elif CMD == "SON":
+              if request[0] == 'Failsafe':
+                self.sonaron = True
+                if request[1] == 'off': self.sonarfailsafe = 0
+                else: self.sonarfailsafe = float(request[1])
+              elif request[0] == 'Sonar' and request[1] == 'off' :
+                self.sonaron = False
+                self.sonarfailsafe = 0
+              out += "OK"
+            elif CMD == "CAM":
+              if request[0] == 'RES':
+                if hasattr(self, 'pmjpg'):
+                  if self.pmjpg.poll() == None:
+                    self.pmjpg.kill()
+                    self.videomode = "OFF"
+                    t = threading.Timer(2.0,self.run_mjpg,[request[1]])
+                    t.start() 
+                    out += " deffered mjpg run"
+                  else: 
+                    out += self.run_mjpg(request[1])
                 else: 
                   out += self.run_mjpg(request[1])
-              else: 
-                out += self.run_mjpg(request[1])
-            elif request[0] == 'OFF':
-              if hasattr(self, 'pmjpg') and self.pmjpg.poll() == None:
-                  self.pmjpg.kill()
-              self.videomode = "OFF"
-              out += "OK"
+              elif request[0] == 'OFF':
+                if hasattr(self, 'pmjpg') and self.pmjpg.poll() == None:
+                    self.pmjpg.kill()
+                self.videomode = "OFF"
+                out += "OK"
+  
+              elif request[0] == 'ZOOM' and request[1] == 'OFF' :
+                status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=1"])  
+                out += "OK"
+  
+              elif request[0] == 'ZOOM' and request[1] == 'ON' :
+                status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=5"])
+                out += "OK"
+            elif CMD == "FESTIVAL":
+                if request[0] == 'ON':
+                    if hasattr(self, 'pfestival'):
+                        if self.pfestival.poll() == None:
+                            self.pfestival.kill()
+                            self.festivalup = False
+                            t = threading.Timer(2.0,self.run_festival)
+                            t.start() 
+                            out += " deffered pfestival run"
+                        else: 
+                            out += self.run_festival()
+                    else: 
+                        out += self.run_festival()
+                elif request[0] == 'OFF':
+                    if hasattr(self, 'pfestival') and self.pfestival.poll() == None:
+                        self.pfestival.kill()
+                    self.festivalup = False
 
-            elif request[0] == 'ZOOM' and request[1] == 'OFF' :
-              status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=1"])  
-              out += "OK"
-
-            elif request[0] == 'ZOOM' and request[1] == 'ON' :
-              status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=5"])
-              out += "OK"
-
-          else:
-            self.log.warn ("unknown command " + CMD + "")
-            continue
-         
-          self.log.debug (out)
+            elif CMD == "SAY":
+                tts = cPickle.loads(data[4:])
+                if self.festivalup:
+                    self.pfestival.stdin.write ("(SayText \"{}\")".format( tts.encode("utf-8")))
+                    self.pfestival.stdin.flush()
+                    self.log.info ("Pronouncing '{}'".format(tts.encode("utf-8")))
+                else:
+                    self.log.warn ("Can't SAY, festival down")
+  
+            else: 
+              self.log.warn ("unknown command " + CMD + "")
+              continue
+           
+            self.log.debug (out)
         #  send ("command done:" + out, addr);
 
     def send (self,body,ip) :
@@ -369,7 +396,19 @@ class K9dApp:
           self.log.error ("Failed to start mjpg_streamer with {}".format(self.videomode))
           self.videomode = "Failed"
         return "OK" 
-  
+
+    def run_festival (self):
+        out = ''
+        cmd = ("/usr/bin/festival", "--language", "russian")
+        self.pfestival = subprocess.Popen(cmd,stdin=subprocess.PIPE)
+        if self.pfestival.poll() == None:
+          self.festivalup = True
+          self.log.info ("Spawned festival with PID: {}".format(self.pfestival.pid))
+        else:
+          self.log.error ("Failed to start festival")
+          self.festivalup = False
+        return "OK" 
+        
 
 if __name__ == "__main__":
     app = K9dApp()
