@@ -122,6 +122,15 @@
                         opacity: 0.5
                         border: [0, 0, 0, 0]
 
+                    ToggleButton:
+                        id:bFest
+                        size: '60sp','30sp'
+                        size_hint: (None, None)
+                        text: 'Festival'
+                        on_press: pilot.send ("FESTIVAL ON") if self.state == 'down' else pilot.send ("FESTIVAL OFF")
+                        opacity: 0.5
+                        border: [0, 0, 0, 0]
+
                     Spinner:
                         text:'Sonar ???'
                         values: ('Failsafe 0.2','Failsafe 0.4', 'Failsafe off','Sonar off')
@@ -131,6 +140,7 @@
                         on_text: pilot.send ("SON " + self.text)
                         opacity: 0.5
                         border: [0, 0, 0, 0]
+
 
                 BoxLayout:
                     orientation: 'horizontal'        
