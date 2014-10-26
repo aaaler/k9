@@ -45,7 +45,7 @@
             size_hint: (None, None)
             id: joy1			
             border: [1, 1, 1, 1]
-            on_pos: root.TracksStop ()
+            on_pos: root.TracksMove ([self.jx,self.jy])
             on_touch_up: root.TracksStop ()
 
         BoxLayout:    

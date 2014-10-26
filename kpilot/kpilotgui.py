@@ -66,8 +66,8 @@ class RootLayout(FloatLayout):
         self.console_input.text = ''
         return True
 
-    def TracksMove (self):
-        pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))       
+    def TracksMove (self, pos, *args):
+        pilot.send ("TRACKS %0.2f %0.2f" % (pos[0],pos[1]))       
 
     def TracksStop (self):
         pilot.send ("TRACKS 0 0")

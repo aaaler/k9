@@ -12,11 +12,11 @@ class Joystick(Widget):
     jy = 0.;
     deadzone = NumericProperty(.05); 
     pos = ListProperty([0, 0])
-    def on_height(self, pos, smth='123'):
+    def on_height(self, pos, *args):
         self.resetcap(); 
-    def on_width(self, pos, smth='123'):
+    def on_width(self, pos, *args):
         self.resetcap(); 
-    def on_pos(self, pos, smth='123'):
+    def on_pos(self, pos, *args):
         self.resetcap(); 
 
     def on_touch_down(self, touch):
