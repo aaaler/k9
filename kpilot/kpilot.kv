@@ -1,6 +1,6 @@
 #:import pilot pilot
 <Widget>:
-#    canvas.after:
+#   canvas.after:
 #        Line:
 #            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
 #            dash_offset: 5
@@ -29,8 +29,8 @@
     bVid:bVid
     bCam:bCam
     fpvideo:fpvideo
-    mainview_log:mainview_log
     console_input:console_input
+    console_log:console_log
 
 
     FloatLayout:
@@ -45,7 +45,7 @@
             size_hint: (None, None)
             id: joy1			
             border: [1, 1, 1, 1]
-            on_pos: root.TracksMove ()
+            on_pos: root.TracksStop ()
             on_touch_up: root.TracksStop ()
 
         BoxLayout:    
@@ -175,15 +175,10 @@
                     size_hint: 1, .05
                     text_size: self.size
                     halign: 'right'
-                Label:
-                    text: '>>>'
-                    id: mainview_log
-                    font_size: '14sp'
+
+                ConsoleLog:
                     size_hint: 1, 1
-                    text_size: self.size
-                    halign: 'left'
-                    valign: 'bottom'
-                    markup: True
+                    id: console_log
 
                 ConsoleInput:
                     text: ''

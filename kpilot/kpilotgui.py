@@ -21,6 +21,7 @@ import pilot
 from uix.joystick import Joystick
 from uix.fancyslider import FancySlider
 from uix.consoleinput import ConsoleInput
+from uix.consolelog import ConsoleLog
 
 
 
@@ -36,6 +37,7 @@ class RootLayout(FloatLayout):
     log = ObjectProperty()
     console_input  = ObjectProperty()
     logstream = io.StringIO()
+    console_log  = ObjectProperty()
 #    logstream = ObjectProperty()
     
 #    def on_logstream(self, *args):
@@ -123,26 +125,6 @@ class RootLayout(FloatLayout):
 #bad idea really, undefined behavior.
 
         except KeyError as e: self.statslabel.text = "not yet " + e.message
-        logbuffer = u""
-        
-        for line in (self.logstream.getvalue()).split(u"\n")[-15:]:
-          if line.find('DEBUG') > 0:
-             color = "AAAAAA"
-          elif line.find('INFO') > 0:
-             color = "AAFFAA"
-#          elif line.find('NOTICE') > 0:
-#             color = "AAAAFF"         
-          elif line.find('WARN') > 0:
-             color = "EEEE99"
-          elif line.find('ERROR') > 0:
-             color = "FFAAAA"
-          elif line.find('CRIT') > 0:
-             color = "FFAAAA"
-          else:
-             color = "FFFFFF"
-          if line != "": logbuffer += u"[color={}]{}[/color]\n".format(color,line)
-
-        self.mainview_log.text = logbuffer[:-1] #last char is always cr
 
 #        while len(pilot.udpinmsgs) > 0 :
 #            try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
@@ -182,7 +164,7 @@ class kPilotApp(App):
         #init gui
         self.mainform = RootLayout()
         #init logger
-        self.mainform.logstream = io.StringIO()
+        self.mainform.logstream = self.mainform.console_log.initstream()
         self.mainform.logstreamhandler = logging.StreamHandler(self.mainform.logstream)
         self.mainform.logstreamhandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s","%H:%M:%S"))
         self.mainform.logstreamhandler.setLevel(logging.INFO)
@@ -198,7 +180,7 @@ class kPilotApp(App):
         #init sheduler
         Clock.schedule_interval(self.mainform.logupdate, .1)
 #        Clock.schedule_interval(pilot.udpreader, .05)
-
+        
 
         self.mainform.log.info (u"Running client on Python " + sys.version)
         return self.mainform
