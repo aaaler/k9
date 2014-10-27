@@ -22,7 +22,7 @@ class ConsoleLog(BoxLayout):
     def __init__(self, *args, **kwargs):
         self.records = []
         self.streampos = 0
-        self.maxrec = 20
+        self.maxrec = 40
         self.decaytime = 300
         self.orientation = 'vertical'
 #        Clock.schedule_interval(self.refresh, 5)

@@ -4,9 +4,8 @@ import logging
 import io
 import cPickle as pickle
 import string
+import pprint
 
-import pygame.joystick as HWJoystick
-import pygame.event as HWEvent
 import pygame
 
 from kivy.app import App
@@ -49,12 +48,13 @@ class RootLayout(FloatLayout):
 #        self.mainview_log.text = self.logstream.getvalue()
     def __init__(self, *args, **kwargs):
         super(RootLayout, self).__init__(**kwargs)
+    
+    def delayed_init (self):
         pygame.joystick.init()
         if pygame.joystick.get_count() > 0:
             self.bHWJ.disabled = False        
-
+            self.log.info (u"Hardware joysticks available: {}".format(pygame.joystick.get_count()) )
     
-#        Clock.schedule_interval(self.refresh, 5)
     def hwjoystick_init (self):
         if pygame.joystick.get_count() > 0:
             hwjoystick = pygame.joystick.Joystick(0)
@@ -62,7 +62,7 @@ class RootLayout(FloatLayout):
             hwjoystick.init()
             pygame.event.pump()
             joyname=hwjoystick.get_name()  
-            self.log.info ("Hardware joystick found: {}.".format(joyname))
+            self.log.info (u"Hardware joystick enabled: {}.".format(joyname))
             self.joy1.hwjoystick_init(hwjoystick)
         else:
             self.hwjoystick = False
@@ -84,6 +84,9 @@ class RootLayout(FloatLayout):
             pkt = ' '.join(request)
             pilot.send (pkt)
             self.log.info (u"Sent: {}".format(pkt))
+        elif cmd == '?':
+            self.log.info (u"{} = {}".format(request[0], eval("pprint.pformat({})".format(request[0])) ))
+
         else:
             self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))
 
@@ -199,16 +202,17 @@ class kPilotApp(App):
         self.mainform.log.setLevel(logging.DEBUG)
         self.mainform.log.addHandler(self.mainform.logstreamhandler)
         self.mainform.log.addHandler(self.mainform.consoleloghandler)
-        #try init hardware joystick
+        self.mainform.log.info (u"kPilotGui Running on Python " + sys.version)
         #init backend
         pilot.init(self.mainform.log)
+        #delayed init for backend-dependent construction
+        self.mainform.delayed_init()
 
         #init sheduler
         Clock.schedule_interval(self.mainform.logupdate, .1)
 #        Clock.schedule_interval(pilot.udpreader, .05)
         
 
-        self.mainform.log.info (u"Running client on Python " + sys.version)
         return self.mainform
     def on_pause(self):
       # Here you can save data if needed
