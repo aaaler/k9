@@ -5,6 +5,10 @@ import io
 import cPickle as pickle
 import string
 
+import pygame.joystick as HWJoystick
+import pygame.event as HWEvent
+import pygame
+
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.widget import Widget
@@ -38,10 +42,31 @@ class RootLayout(FloatLayout):
     console_input  = ObjectProperty()
     logstream = io.StringIO()
     console_log  = ObjectProperty()
-#    logstream = ObjectProperty()
+    joy1 = ObjectProperty()
+    bHWJ = ObjectProperty()
     
 #    def on_logstream(self, *args):
 #        self.mainview_log.text = self.logstream.getvalue()
+    def __init__(self, *args, **kwargs):
+        super(RootLayout, self).__init__(**kwargs)
+        pygame.joystick.init()
+        if pygame.joystick.get_count() > 0:
+            self.bHWJ.disabled = False        
+
+    
+#        Clock.schedule_interval(self.refresh, 5)
+    def hwjoystick_init (self):
+        if pygame.joystick.get_count() > 0:
+            hwjoystick = pygame.joystick.Joystick(0)
+            pygame.event.pump()
+            hwjoystick.init()
+            pygame.event.pump()
+            joyname=hwjoystick.get_name()  
+            self.log.info ("Hardware joystick found: {}.".format(joyname))
+            self.joy1.hwjoystick_init(hwjoystick)
+        else:
+            self.hwjoystick = False
+
 
     def ConsoleCmd (self, data):
         data = unicode (data,'utf-8');
@@ -59,7 +84,6 @@ class RootLayout(FloatLayout):
             pkt = ' '.join(request)
             pilot.send (pkt)
             self.log.info (u"Sent: {}".format(pkt))
-
         else:
             self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))
 
@@ -175,8 +199,10 @@ class kPilotApp(App):
         self.mainform.log.setLevel(logging.DEBUG)
         self.mainform.log.addHandler(self.mainform.logstreamhandler)
         self.mainform.log.addHandler(self.mainform.consoleloghandler)
+        #try init hardware joystick
         #init backend
         pilot.init(self.mainform.log)
+
         #init sheduler
         Clock.schedule_interval(self.mainform.logupdate, .1)
 #        Clock.schedule_interval(pilot.udpreader, .05)

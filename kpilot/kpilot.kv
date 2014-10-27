@@ -31,6 +31,7 @@
     fpvideo:fpvideo
     console_input:console_input
     console_log:console_log
+    bHWJ:bHWJ
 
 
     FloatLayout:
@@ -139,6 +140,16 @@
                         id: bSon
                         on_text: pilot.send ("SON " + self.text)
                         opacity: 0.5
+                        border: [0, 0, 0, 0]
+
+                    ToggleButton:
+                        id:bHWJ
+                        size: '60sp','30sp'
+                        size_hint: (None, None)
+                        text: 'Joystick'
+                        on_press: root.hwjoystick_init() if self.state == 'down' else root.joy1.hwjoystick_stop()
+                        opacity: 0.5
+                        disabled: True
                         border: [0, 0, 0, 0]
 
 

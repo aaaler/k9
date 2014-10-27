@@ -1,7 +1,14 @@
 from kivy.uix.widget import Widget
 from kivy.properties import  NumericProperty, ListProperty
 from kivy.lang import Builder
+from kivy.clock import Clock
 from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicException
+from contextlib import contextmanager
+
+import pygame
+import sys, os
+
+
 
 Builder.load_file("uix\joystick\joystick.kv")
 
@@ -12,6 +19,42 @@ class Joystick(Widget):
     jy = 0.;
     deadzone = NumericProperty(.05); 
     pos = ListProperty([0, 0])
+
+    def __init__(self, *args, **kwargs):
+        self.hwx = 0.
+        self.hwy = 0.
+
+        pass
+
+        super(Joystick, self).__init__(**kwargs)
+
+    def hwjoystick_refresh(self, *args):
+        pygame.event.pump()
+        newhwx = self.hwjoystick.get_axis(0)
+        newhwy = -self.hwjoystick.get_axis(1)
+        if newhwx != self.hwx or newhwy != self.hwy:
+            self.hwx = newhwx
+            self.hwy = newhwy
+
+            self.joycap.center_x = self.x+(self.width*((self.hwx + 1)/2))
+            self.joycap.center_y = self.y+(self.height*((self.hwy + 1)/2))
+            self.jx = self.hwx
+            self.jy = self.hwy
+            if abs(self.hwx) < self.deadzone:
+              self.jx = 0
+            if abs(self.hwy) < self.deadzone:
+              self.jy = 0
+            self.coordslabel.text = "x:%0.3f y: %0.3f" % (self.hwx ,self.hwy) 
+            self.pos = (self.jx ,self.jy)
+        pass
+
+    def hwjoystick_init(self,hwjoystick):
+        self.hwjoystick = hwjoystick
+        Clock.schedule_interval(self.hwjoystick_refresh, 0.01)        
+        pass
+    def hwjoystick_stop (self):
+        Clock.unschedule(self.hwjoystick_refresh)
+        self.hwjoystick = False
     def on_height(self, pos, *args):
         self.resetcap(); 
     def on_width(self, pos, *args):
