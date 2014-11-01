@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import os
+from munin import MuninPlugin
+
+class LoadAVGPlugin(MuninPlugin):
+    title = "Battery voltage"
+    args = "--base 1000 -l 0"
+    vlabel = "mA"
+    scale = False
+    category = "power"
+
+    @property
+    def fields(self):
+        return [("bvoltage", dict(
+                label = "bat voltage",
+                info = 'battery voltage',
+                type = "GAUGE",
+                max = "100000",
+                min = "0")),
+                ("acvoltage", dict(
+                label = "ac voltage",
+                info = 'ac voltage',
+                type = "GAUGE",
+                max = "100000",
+                min = "0")),
+                ("usbvoltage", dict(
+                label = "usb voltage",
+                info = 'usb voltage',
+                type = "GAUGE",
+                max = "100000",
+                min = "0")),
+                ]
+
+    def execute(self):
+        if os.path.exists("/sys/class/power_supply/battery/voltage_now"):
+            bvol = open("/sys/class/power_supply/battery/voltage_now", "r").read().strip()
+        if os.path.exists("/sys/class/power_supply/ac/voltage_now"):
+            acvol = open("/sys/class/power_supply/ac/voltage_now", "r").read().strip()
+        if os.path.exists("/sys/class/power_supply/usb/voltage_now"):
+            usbvol = open("/sys/class/power_supply/usb/voltage_now", "r").read().strip()
+        return dict(bvoltage=int(bvol)/1000,acvoltage=int(acvol)/1000,usbvoltage=int(usbvol)/1000)
+
+if __name__ == "__main__":
+    LoadAVGPlugin().run()

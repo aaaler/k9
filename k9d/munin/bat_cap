@@ -1,0 +1,28 @@
+#!/usr/bin/env python
+
+import os
+from munin import MuninPlugin
+
+class LoadAVGPlugin(MuninPlugin):
+    title = "Battery Capacity"
+    args = "--base 1000 -l 0"
+    vlabel = "percent"
+    scale = False
+    category = "power"
+
+    @property
+    def fields(self):
+        return [("capacity", dict(
+                label = "capacity",
+                info = 'battery capacity',
+                type = "GAUGE",
+                max = "100",
+                min = "0"))]
+
+    def execute(self):
+        if os.path.exists("/sys/class/power_supply/battery/capacity"):
+            res = open("/sys/class/power_supply/battery/capacity", "r").read().strip()
+        return dict(capacity=res)
+
+if __name__ == "__main__":
+    LoadAVGPlugin().run()

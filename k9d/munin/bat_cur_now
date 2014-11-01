@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+import os
+from munin import MuninPlugin
+
+class LoadAVGPlugin(MuninPlugin):
+    title = "Battery Current"
+    args = "--base 1000 -l 0"
+    vlabel = "mA"
+    scale = False
+    category = "power"
+
+    @property
+    def fields(self):
+        return [("bcurrent", dict(
+                label = "bat current",
+                info = 'battery current',
+                type = "GAUGE",
+                max = "100000",
+                min = "0")),
+                ("accurrent", dict(
+                label = "ac current",
+                info = 'ac current',
+                type = "GAUGE",
+                max = "100000",
+                min = "0")),
+                ("usbcurrent", dict(
+                label = "usb current",
+                info = 'usb current',
+                type = "GAUGE",
+                max = "100000",
+                min = "0")),
+                ]
+
+    def execute(self):
+        if os.path.exists("/sys/class/power_supply/battery/current_now"):
+            bcur = open("/sys/class/power_supply/battery/current_now", "r").read().strip()
+        if os.path.exists("/sys/class/power_supply/ac/current_now"):
+            accur = open("/sys/class/power_supply/ac/current_now", "r").read().strip()
+        if os.path.exists("/sys/class/power_supply/usb/current_now"):
+            usbcur = open("/sys/class/power_supply/usb/current_now", "r").read().strip()
+        return dict(bcurrent=int(bcur)/1000,accurrent=int(accur)/1000,usbcurrent=int(usbcur)/1000)
+
+if __name__ == "__main__":
+    LoadAVGPlugin().run()
