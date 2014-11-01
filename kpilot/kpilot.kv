@@ -1,6 +1,6 @@
 #:import pilot pilot
 <Widget>:
-#    canvas.after:
+#   canvas.after:
 #        Line:
 #            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
 #            dash_offset: 5
@@ -29,8 +29,9 @@
     bVid:bVid
     bCam:bCam
     fpvideo:fpvideo
-    mainview_log:mainview_log
     console_input:console_input
+    console_log:console_log
+    bHWJ:bHWJ
 
 
     FloatLayout:
@@ -45,7 +46,7 @@
             size_hint: (None, None)
             id: joy1			
             border: [1, 1, 1, 1]
-            on_pos: root.TracksMove ()
+            on_pos: root.TracksMove ([self.jx,self.jy])
             on_touch_up: root.TracksStop ()
 
         BoxLayout:    
@@ -122,15 +123,35 @@
                         opacity: 0.5
                         border: [0, 0, 0, 0]
 
+                    ToggleButton:
+                        id:bFest
+                        size: '60sp','30sp'
+                        size_hint: (None, None)
+                        text: 'Festival'
+                        on_press: pilot.send ("FESTIVAL ON") if self.state == 'down' else pilot.send ("FESTIVAL OFF")
+                        opacity: 0.5
+                        border: [0, 0, 0, 0]
+
                     Spinner:
                         text:'Sonar ???'
-                        values: ('Failsafe 0.2','Failsafe 0.4', 'Failsafe off','Sonar off')
+                        values: ('Failsafe 0.2','Failsafe 0.3', 'Failsafe 0.4', 'Failsafe off','Sonar off')
                         size_hint: (None, None)
                         size: '110sp','30sp'
                         id: bSon
                         on_text: pilot.send ("SON " + self.text)
                         opacity: 0.5
                         border: [0, 0, 0, 0]
+
+                    ToggleButton:
+                        id:bHWJ
+                        size: '60sp','30sp'
+                        size_hint: (None, None)
+                        text: 'Joystick'
+                        on_press: root.hwjoystick_init() if self.state == 'down' else root.joy1.hwjoystick_stop()
+                        opacity: 0.5
+                        disabled: True
+                        border: [0, 0, 0, 0]
+
 
                 BoxLayout:
                     orientation: 'horizontal'        
@@ -165,15 +186,10 @@
                     size_hint: 1, .05
                     text_size: self.size
                     halign: 'right'
-                Label:
-                    text: '>>>'
-                    id: mainview_log
-                    font_size: '14sp'
+
+                ConsoleLog:
                     size_hint: 1, 1
-                    text_size: self.size
-                    halign: 'left'
-                    valign: 'bottom'
-                    markup: True
+                    id: console_log
 
                 ConsoleInput:
                     text: ''

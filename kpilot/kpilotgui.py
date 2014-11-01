@@ -4,6 +4,9 @@ import logging
 import io
 import cPickle as pickle
 import string
+import pprint
+
+import pygame
 
 from kivy.app import App
 from kivy.uix.floatlayout import FloatLayout
@@ -21,6 +24,7 @@ import pilot
 from uix.joystick import Joystick
 from uix.fancyslider import FancySlider
 from uix.consoleinput import ConsoleInput
+from uix.consolelog import ConsoleLog
 
 
 
@@ -36,10 +40,33 @@ class RootLayout(FloatLayout):
     log = ObjectProperty()
     console_input  = ObjectProperty()
     logstream = io.StringIO()
-#    logstream = ObjectProperty()
+    console_log  = ObjectProperty()
+    joy1 = ObjectProperty()
+    bHWJ = ObjectProperty()
     
 #    def on_logstream(self, *args):
 #        self.mainview_log.text = self.logstream.getvalue()
+    def __init__(self, *args, **kwargs):
+        super(RootLayout, self).__init__(**kwargs)
+    
+    def delayed_init (self):
+        pygame.joystick.init()
+        if pygame.joystick.get_count() > 0:
+            self.bHWJ.disabled = False        
+            self.log.info (u"Hardware joysticks available: {}".format(pygame.joystick.get_count()) )
+    
+    def hwjoystick_init (self):
+        if pygame.joystick.get_count() > 0:
+            hwjoystick = pygame.joystick.Joystick(0)
+            pygame.event.pump()
+            hwjoystick.init()
+            pygame.event.pump()
+            joyname=hwjoystick.get_name()  
+            self.log.info (u"Hardware joystick enabled: {}.".format(joyname))
+            self.joy1.hwjoystick_init(hwjoystick)
+        else:
+            self.hwjoystick = False
+
 
     def ConsoleCmd (self, data):
         data = unicode (data,'utf-8');
@@ -57,6 +84,8 @@ class RootLayout(FloatLayout):
             pkt = ' '.join(request)
             pilot.send (pkt)
             self.log.info (u"Sent: {}".format(pkt))
+        elif cmd == '?':
+            self.log.info (u"{} = {}".format(request[0], eval("pprint.pformat({})".format(request[0])) ))
 
         else:
             self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))
@@ -64,8 +93,8 @@ class RootLayout(FloatLayout):
         self.console_input.text = ''
         return True
 
-    def TracksMove (self):
-        pilot.send ("TRACKS %0.2f %0.2f" % (self.joy1.pos[0],self.joy1.pos[1]))       
+    def TracksMove (self, pos, *args):
+        pilot.send ("TRACKS %0.2f %0.2f" % (pos[0],pos[1]))       
 
     def TracksStop (self):
         pilot.send ("TRACKS 0 0")
@@ -123,26 +152,6 @@ class RootLayout(FloatLayout):
 #bad idea really, undefined behavior.
 
         except KeyError as e: self.statslabel.text = "not yet " + e.message
-        logbuffer = u""
-        
-        for line in (self.logstream.getvalue()).split(u"\n")[-15:]:
-          if line.find('DEBUG') > 0:
-             color = "AAAAAA"
-          elif line.find('INFO') > 0:
-             color = "AAFFAA"
-#          elif line.find('NOTICE') > 0:
-#             color = "AAAAFF"         
-          elif line.find('WARN') > 0:
-             color = "EEEE99"
-          elif line.find('ERROR') > 0:
-             color = "FFAAAA"
-          elif line.find('CRIT') > 0:
-             color = "FFAAAA"
-          else:
-             color = "FFFFFF"
-          if line != "": logbuffer += u"[color={}]{}[/color]\n".format(color,line)
-
-        self.mainview_log.text = logbuffer[:-1] #last char is always cr
 
 #        while len(pilot.udpinmsgs) > 0 :
 #            try: self.log_box.text = pilot.udpinmsgs.pop(0) + "\n"
@@ -182,7 +191,7 @@ class kPilotApp(App):
         #init gui
         self.mainform = RootLayout()
         #init logger
-        self.mainform.logstream = io.StringIO()
+        self.mainform.logstream = self.mainform.console_log.initstream()
         self.mainform.logstreamhandler = logging.StreamHandler(self.mainform.logstream)
         self.mainform.logstreamhandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s","%H:%M:%S"))
         self.mainform.logstreamhandler.setLevel(logging.INFO)
@@ -193,14 +202,17 @@ class kPilotApp(App):
         self.mainform.log.setLevel(logging.DEBUG)
         self.mainform.log.addHandler(self.mainform.logstreamhandler)
         self.mainform.log.addHandler(self.mainform.consoleloghandler)
+        self.mainform.log.info (u"kPilotGui Running on Python " + sys.version)
         #init backend
         pilot.init(self.mainform.log)
+        #delayed init for backend-dependent construction
+        self.mainform.delayed_init()
+
         #init sheduler
         Clock.schedule_interval(self.mainform.logupdate, .1)
 #        Clock.schedule_interval(pilot.udpreader, .05)
+        
 
-
-        self.mainform.log.info (u"Running client on Python " + sys.version)
         return self.mainform
     def on_pause(self):
       # Here you can save data if needed
