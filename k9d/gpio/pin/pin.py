@@ -1,15 +1,18 @@
+from pyA20.gpio import port 
+from pyA20.gpio import connector
+from pyA20.gpio import gpio as gpio
+
 
 class pin(object):
-    from pyA20.gpio import port
-    from pyA20.gpio import connector
-    from pyA20.gpio import gpio as gpio
-
+    port = port
+    connector = connector
+    gpio = gpio
     def __init__ (self, pin_id, direction = 1, value = 0):
         self._pinid = pin_id
         self._direction = direction
         self._value = value
         gpio.init()
-        gpio.setcfg (pin_id, dir)
+        gpio.setcfg (pin_id, direction)
         gpio.output (pin_id, value)
 
     @property
@@ -24,7 +27,7 @@ class pin(object):
             self._value = value
             gpio.output (self._pinid, value)
             return True
-        else        
+        else:
             return False
 
     @property
@@ -37,6 +40,8 @@ class pin(object):
             self._direction = direction
             gpio.setcfg (self._pinid, dir)
             return True
-        else        
+        else:        
             return False
+    
+
     

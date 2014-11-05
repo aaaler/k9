@@ -11,6 +11,8 @@ import subprocess
 import re
 import logging
 import logging.handlers
+from gpio.pwmpin import pwmpin
+from gpio.pin import pin
 
 class K9dApp:
     #Compile RE for iwconfig ouput parsing
@@ -57,10 +59,10 @@ class K9dApp:
         #============SERIAL INIT===================
         try:
           self.spinal = serial.Serial('/dev/ttyACM0', 115200, timeout=0.5)
+          self.spinal_enabled = True
         except:
-          self.log.error("Could not open port for spinal")
-          sys.exit(1)
-        
+          self.spinal_enabled = False
+          self.log.info("Could not open port for arduino -- connection disabled ")                
         
         try:
           self.sonar = serial.Serial('/dev/ttyS1', 9600, timeout=0.5)
@@ -70,9 +72,16 @@ class K9dApp:
         
         #===========THREADING INIT=================
         
-        self.tSerialRead = threading.Thread(target=self.sreader)
-        self.tSerialRead.setDaemon (1)
-        self.tSerialRead.start()
+        self.ardustate['S1']=-1
+        self.ardustate['S2']=-1
+        self.ardustate['A1']=-1
+        self.ardustate['A2']=-1
+        self.ardustate['A3']=-1
+
+        if self.spinal_enabled:
+            self.tSerialRead = threading.Thread(target=self.sreader)
+            self.tSerialRead.setDaemon (1)
+            self.tSerialRead.start()
         
         self.tTrackWatchdog = threading.Thread(target=self.cmdtimeout)
         self.tTrackWatchdog.setDaemon (1)
@@ -88,7 +97,6 @@ class K9dApp:
             
         
         self.log.info ("ready to play");
-        self.spinal.write("1;");
 
     def log_init(self):
          
@@ -201,15 +209,19 @@ class K9dApp:
             self.log.debug (out)
         #  send ("command done:" + out, addr);
 
+            
     def send (self,body,ip) :
       #  return respsock.sendto(bytes(body, 'UTF-8'), ("192.168.0.22", UDP_PORT))
       return self.respsock.sendto(body, (self.addr, self.UDP_PORT))
 
 
     def spinal_write (self,data):
-        debugmsg = "UART< {}".format(data)
-        self.log.debug(debugmsg)
-        return self.spinal.write(data)
+        if self.spinal_enabled:
+            debugmsg = "UART< {}".format(data)
+            self.log.debug(debugmsg)
+            return self.spinal.write(data)
+        else:
+            self.log.debug ("Discard spinal msg: {}".format(data))
     
     def from_spinal (self,pkt):
         if pkt == "0_o\n" :
@@ -262,7 +274,7 @@ class K9dApp:
             self.ardustate['cpu_accur'] = int(open("/sys/class/power_supply/ac/current_now", "r").read().strip())/1000
           if os.path.exists("/sys/class/power_supply/battery/status"):
             self.ardustate['cpu_bstate'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
-          self.piwconfig = subprocess.Popen(["/sbin/iwconfig", "wlan7"], stdout=subprocess.PIPE)
+          self.piwconfig = subprocess.Popen(["/sbin/iwconfig", "wlan0"], stdout=subprocess.PIPE)
           iwconfig_out, err = self.piwconfig.communicate()
           match = self.brre.search(iwconfig_out)
           if match: self.ardustate['wifi_br'] = match.group(1)
