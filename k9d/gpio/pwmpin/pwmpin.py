@@ -45,6 +45,28 @@ class pwmpin(object):
             f.close()
 
     @property
+    def period (self):
+        return self._period
+
+    @period.setter
+    def setperiod (self,period)
+        self._period = period
+        if (self._duty != -1): self._duty = -1
+        if (self._freq != -1): self._freq = -1
+        return self._setperiod()
+
+    @property
+    def pulse (self):
+        return self._period
+
+    @pulse.setter
+    def setpulse (self,pulse)
+        self._pulse = pulse
+        if (self._duty != -1): self._duty = -1
+        return seldf._setpulse()
+
+
+    @property
     def freq (self):
         return self._freq
 

@@ -13,6 +13,7 @@ import logging
 import logging.handlers
 from gpio.pwmpin import pwmpin
 from gpio.pin import pin
+from gpio.servo import servo
 
 class K9dApp:
     #Compile RE for iwconfig ouput parsing
