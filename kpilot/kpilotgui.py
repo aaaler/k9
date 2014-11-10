@@ -142,8 +142,11 @@ class RootLayout(FloatLayout):
         try: 
             self.label1.text = "Li-ion: %0.2fV\n +5: %0.2fV\n"  % (float(pilot.stats['A3'])*0.009774078,float(pilot.stats['A2'])*0.0096850)
             self.label1.text += "CPU BAT: {:d}% \n{:d}mA \nExt: {:d}mA \nState: {}\n".format(pilot.stats['cpu_bcap'],pilot.stats['cpu_bcur'],pilot.stats['cpu_accur'],pilot.stats['cpu_bstate']) 
-            self.label1.text += "stat:{:.2f}s {:d}b\nSonar: {:.2f}M\n".format(pilot.statsdtime,pilot.stats['size'], float(pilot.stats['Son'])/1000)
             self.label1.text += "Wifi: {} {} {}\n".format(pilot.stats['wifi_br'],pilot.stats['wifi_lq'],pilot.stats['wifi_sl'])
+            self.label1.text += "stat:{:.2f}s {:d}b\nSonar: {:.2f}M\n".format(pilot.statsdtime,pilot.stats['size'], float(pilot.stats['Son'])/1000)
+            self.label1.text += "CPU Use: {}\n".format(pilot.stats['cpu'])
+            self.label1.text += "UL: {:.2f} DL: {:.2f}\n".format(pilot.stats['ul'],pilot.stats['dl'])
+
 
             self.statslabel.text = "L: {:+.2f} R: {:+.2f}".format(pilot.stats['trackr'], pilot.stats['trackl'])
             self.servo1label.text = "Head ^%03dv" % int(pilot.stats['S1'])
