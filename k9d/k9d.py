@@ -58,7 +58,7 @@ class K9dApp:
                      socket.SOCK_DGRAM) # UDP
         #============SERIAL INIT===================
         try:
-          self.spinal = serial.Serial('/dev/ttyACM0', 115200, timeout=0.5)
+          self.spinal = serial.Serial('/dev/ttyS2', 115200, timeout=0.5)
           self.spinal_enabled = True
         except:
           self.spinal_enabled = False
