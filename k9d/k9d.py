@@ -314,7 +314,6 @@ class K9dApp:
         while True:
           if self.sonaron:
             self.sonar.write("U")
-    #      time.sleep(0.1)
             try:
               HighLen = ord(self.sonar.read(1));                   #High byte of distance
               LowLen  = ord(self.sonar.read(1));                   #Low byte of distance
