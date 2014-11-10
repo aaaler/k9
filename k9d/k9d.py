@@ -11,6 +11,7 @@ import subprocess
 import re
 import logging
 import logging.handlers
+import psutil
 from gpio.pwmpin import pwmpin
 from gpio.pin import pin
 from gpio.servo import servo
@@ -268,7 +269,10 @@ class K9dApp:
         
 
     def tstateup (self):
+        (netul, netdl) = psutil.network_io_counters(pernic = 1)["wlan0"][:2]
+        lastnettime = time.time()
         while 1:
+          # sysfs power stats
           if os.path.exists("/sys/class/power_supply/battery/capacity"):
             self.faststate['cpu_bcap'] = int(open("/sys/class/power_supply/battery/capacity", "r").read().strip())
           if os.path.exists("/sys/class/power_supply/battery/current_now"):
@@ -277,6 +281,7 @@ class K9dApp:
             self.faststate['cpu_accur'] = int(open("/sys/class/power_supply/ac/current_now", "r").read().strip())/1000
           if os.path.exists("/sys/class/power_supply/battery/status"):
             self.faststate['cpu_bstate'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
+          # iwconfig networking stats
           self.piwconfig = subprocess.Popen(["/sbin/iwconfig", "wlan0"], stdout=subprocess.PIPE)
           iwconfig_out, err = self.piwconfig.communicate()
           match = self.brre.search(iwconfig_out)
@@ -289,6 +294,16 @@ class K9dApp:
           else:
             self.faststate['wifi_lq'] = "n/a"
             self.faststate['wifi_sl'] = "n/a"
+          # cpu load
+          self.faststate['cpu'] = psutil.cpu_percent()
+          # current bandwidth
+          (_netul, _netdl) = psutil.network_io_counters(pernic = 1)["wlan0"][:2]
+          _nettime = time.time()
+          _dnettime = _nettime - lastnettime
+          self.faststate['ul'] = ((_netul - netul) / _dnettime) /1000000
+          self.faststate['dl'] = ((_netdl - netdl) / _dnettime) /1000000
+          (netul, netdl, lastnettime) = (_netul, _netdl,_nettime)
+
           self.stateupload()
           time.sleep (1)
 
