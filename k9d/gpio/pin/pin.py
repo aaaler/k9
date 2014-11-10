@@ -56,7 +56,7 @@ class pin(object):
         self.value = 0
 
     def toggle (self):
-        if self._value = 0:
+        if self._value == 0:
             self.high
         else:
             self.low

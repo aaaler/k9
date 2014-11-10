@@ -39,6 +39,7 @@ class pwmpin(object):
     def _setpulse (self):
         kpinid = self._kpinid
         iopath='/sys/class/soft_pwm/pwm' + str(kpinid)
+        print iopath
         if os.path.exists(iopath):
             f = open(iopath + '/pulse','w')
             f.write(str(self._pulse))
@@ -49,21 +50,21 @@ class pwmpin(object):
         return self._period
 
     @period.setter
-    def setperiod (self,period)
-        self._period = period
+    def period (self,period):
+        self._period = int(period)
         if (self._duty != -1): self._duty = -1
         if (self._freq != -1): self._freq = -1
         return self._setperiod()
 
     @property
     def pulse (self):
-        return self._period
+        return self._pulse
 
     @pulse.setter
-    def setpulse (self,pulse)
-        self._pulse = pulse
+    def pulse (self,pulse):
+        self._pulse = int(pulse)
         if (self._duty != -1): self._duty = -1
-        return seldf._setpulse()
+        return self._setpulse()
 
 
     @property
