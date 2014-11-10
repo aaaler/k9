@@ -42,8 +42,8 @@ class K9dApp:
         self.cal_track_min = 180
        
         #init
-        self.ardustate = {}
-        self.ardustate["proxalert"] = False
+        self.faststate = {}
+        self.faststate["proxalert"] = False
         self.tracktimeout = time.time()
         self.trackmode = ""
         self.sonardist = 0
@@ -67,17 +67,18 @@ class K9dApp:
         
         try:
           self.sonar = serial.Serial('/dev/ttyS1', 9600, timeout=0.5)
+          self.sonar_enabled = True
         except:
-          self.log.error("Could not open port for sonar")
-          sys.exit(1)
+          self.log.error("Could not open port for sonar -- sonar disabled")
+          self.sonar_enabled = False
         
         #===========THREADING INIT=================
         
-        self.ardustate['S1']=-1
-        self.ardustate['S2']=-1
-        self.ardustate['A1']=-1
-        self.ardustate['A2']=-1
-        self.ardustate['A3']=-1
+        self.faststate['S1']=-1
+        self.faststate['S2']=-1
+        self.faststate['A1']=-1
+        self.faststate['A2']=-1
+        self.faststate['A3']=-1
 
         if self.spinal_enabled:
             self.tSerialRead = threading.Thread(target=self.sreader)
@@ -91,10 +92,11 @@ class K9dApp:
         self.tStateUpload = threading.Thread(target=self.tstateup)
         self.tStateUpload.setDaemon (1)
         self.tStateUpload.start()
-        
-        self.tSonar = threading.Thread(target=self.tsonar)
-        self.tSonar.setDaemon (1)
-        self.tSonar.start()
+    
+        if self.sonar_enabled:        
+            self.tSonar = threading.Thread(target=self.tsonar)
+            self.tSonar.setDaemon (1)
+            self.tSonar.start()
             
         
         self.log.info ("ready to play");
@@ -201,7 +203,7 @@ class K9dApp:
                     self.pfestival.stdin.flush()
                     self.log.info ("Pronouncing '{}'".format(tts.encode("utf-8")))
                 else:
-                    self.log.warn ("Can't SAY, festival down")
+                    self.log.err ("Can't SAY, festival down")
   
             else: 
               self.log.warn ("unknown command " + CMD + "")
@@ -245,22 +247,22 @@ class K9dApp:
         b = 0
         for i in range (2,11):
           if i in [5,6]: 
-            self.ardustate['D'+str(i)]='N'
+            self.faststate['D'+str(i)]='N'
             continue
           bit = self.getbit(ord(stat[0]),b)
           b +=1
-          self.ardustate['D'+str(i)]=bit
+          self.faststate['D'+str(i)]=bit
           statusdebug += (str(i) + ":" + str(int(bit)) + " ")
         statusdebug += ("s1:" + str(ord(stat[1])) + " ")
-        self.ardustate['S1']=ord(stat[1])
+        self.faststate['S1']=ord(stat[1])
         statusdebug += ("s2:" + str(ord(stat[2])) + " ") 
-        self.ardustate['S2']=ord(stat[2])
+        self.faststate['S2']=ord(stat[2])
         statusdebug += ("a1:" + str(ord(stat[4]) + (ord(stat[3])<<8)) + " ")
-        self.ardustate['A1']=str(ord(stat[4]) + (ord(stat[3])<<8))
+        self.faststate['A1']=str(ord(stat[4]) + (ord(stat[3])<<8))
         statusdebug += ("a2:" + str(ord(stat[6]) + (ord(stat[5])<<8)) + " ")
-        self.ardustate['A2']=str(ord(stat[6]) + (ord(stat[5])<<8))
+        self.faststate['A2']=str(ord(stat[6]) + (ord(stat[5])<<8))
         statusdebug += ("a3:" + str(ord(stat[8]) + (ord(stat[7])<<8)) + "")
-        self.ardustate['A3']=str(ord(stat[8]) + (ord(stat[7])<<8))
+        self.faststate['A3']=str(ord(stat[8]) + (ord(stat[7])<<8))
 #        self.log.debug (statusdebug);
         self.stateupload()
         
@@ -268,30 +270,30 @@ class K9dApp:
     def tstateup (self):
         while 1:
           if os.path.exists("/sys/class/power_supply/battery/capacity"):
-            self.ardustate['cpu_bcap'] = int(open("/sys/class/power_supply/battery/capacity", "r").read().strip())
+            self.faststate['cpu_bcap'] = int(open("/sys/class/power_supply/battery/capacity", "r").read().strip())
           if os.path.exists("/sys/class/power_supply/battery/current_now"):
-            self.ardustate['cpu_bcur'] = int(open("/sys/class/power_supply/battery/current_now", "r").read().strip())/1000
+            self.faststate['cpu_bcur'] = int(open("/sys/class/power_supply/battery/current_now", "r").read().strip())/1000
           if os.path.exists("/sys/class/power_supply/ac/current_now"):
-            self.ardustate['cpu_accur'] = int(open("/sys/class/power_supply/ac/current_now", "r").read().strip())/1000
+            self.faststate['cpu_accur'] = int(open("/sys/class/power_supply/ac/current_now", "r").read().strip())/1000
           if os.path.exists("/sys/class/power_supply/battery/status"):
-            self.ardustate['cpu_bstate'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
+            self.faststate['cpu_bstate'] = open("/sys/class/power_supply/battery/status", "r").read().strip()
           self.piwconfig = subprocess.Popen(["/sbin/iwconfig", "wlan0"], stdout=subprocess.PIPE)
           iwconfig_out, err = self.piwconfig.communicate()
           match = self.brre.search(iwconfig_out)
-          if match: self.ardustate['wifi_br'] = match.group(1)
-          else: self.ardustate['wifi_br'] = "n/a"
+          if match: self.faststate['wifi_br'] = match.group(1)
+          else: self.faststate['wifi_br'] = "n/a"
           match = self.lqre.search(iwconfig_out)
           if match:
-            self.ardustate['wifi_lq'] = match.group(1)
-            self.ardustate['wifi_sl'] = match.group(2)
+            self.faststate['wifi_lq'] = match.group(1)
+            self.faststate['wifi_sl'] = match.group(2)
           else:
-            self.ardustate['wifi_lq'] = "n/a"
-            self.ardustate['wifi_sl'] = "n/a"
+            self.faststate['wifi_lq'] = "n/a"
+            self.faststate['wifi_sl'] = "n/a"
           self.stateupload()
           time.sleep (1)
 
     def stateupload (self):
-        self.send ("#"+cPickle.dumps (self.ardustate),self.addr)
+        self.send ("#"+cPickle.dumps (self.faststate),self.addr)
     
     def tsonar (self):
         while True:
@@ -303,24 +305,24 @@ class K9dApp:
               LowLen  = ord(self.sonar.read(1));                   #Low byte of distance
               self.sonardist  = int(HighLen*256 + LowLen);             #Calculate the distance
     #        print ("SONAR H:"+ str( sonardist))
-              self.ardustate["Son"]=self.sonardist
+              self.faststate["Son"]=self.sonardist
               if float(self.sonardist)/1000 <= self.sonarfailsafe:
                 if not self.sonarfailsafe_active:
                     self.sonarfailsafe_active = True
-                    self.ardustate["proxalert"] = True
+                    self.faststate["proxalert"] = True
                     self.log.info ("Sonar failsafe activated at distance {} meters".format(float(self.sonardist)/1000))
                 if self.tracksy > 0: self.tracks (self.tracksx,0)
               else: 
                 if self.sonarfailsafe_active:
                     self.log.info ("Sonar failsafe deactivated at distance {} meters".format(float(self.sonardist)/1000))
                     self.sonarfailsafe_active = False
-                    self.ardustate["proxalert"] = False
+                    self.faststate["proxalert"] = False
  
             except serial.SerialException:
-              self.ardustate["Son"]=65535
+              self.faststate["Son"]=65535
               self.log.info ("Sonar err")
               pass
-          else:self.ardustate["Son"]=65534
+          else:self.faststate["Son"]=65534
           time.sleep(.05)
           
     
@@ -380,8 +382,8 @@ class K9dApp:
         
       out="8 %0d %0d %0d %0d %0d %0d;" % (self.trackl>0,self.trackl<0,abs(self.trackr)*(255-self.cal_track_min)+self.cal_track_min,self.trackr>0,self.trackr<0,abs(self.trackl)*(255-self.cal_track_min)+self.cal_track_min)
       self.spinal_write(out);
-      self.ardustate['trackr'] = self.trackr;
-      self.ardustate['trackl'] = self.trackl;
+      self.faststate['trackr'] = self.trackr;
+      self.faststate['trackl'] = self.trackl;
       self.tracksx = fX
       self.tracksy = fY
       return "OK"
