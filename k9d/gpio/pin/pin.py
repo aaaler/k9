@@ -43,5 +43,20 @@ class pin(object):
         else:        
             return False
     
+    def high (self):
+        self.value = 1
 
-    
+    def on (self):
+        self.value = 1
+        
+    def low (self):
+        self.value = 0
+
+    def off (self):
+        self.value = 0
+
+    def toggle (self):
+        if self._value = 0:
+            self.high
+        else:
+            self.low

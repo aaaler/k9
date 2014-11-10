@@ -1,7 +1,5 @@
 import os
 class pwmpin(object):
-
-
     def __init__ (self, kpinid, frequency = 50, duty = 50):
         self._kpinid = kpinid
         self._freq = frequency
@@ -9,10 +7,11 @@ class pwmpin(object):
         self._period = 100000
         self._pulse = 50000
         self._export ()
-	print (self.freq)
-	self.freq = frequency
+        self.freq = frequency
+
     def __del__ (self):
-	self._unexport()
+        self._unexport()
+    
     def _export (self):
         kpinid = self._kpinid
         iopath='/sys/class/soft_pwm/pwm' + str(kpinid)
