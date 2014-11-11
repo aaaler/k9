@@ -18,12 +18,6 @@ class ConsoleInput(TextInput):
             Clock.schedule_once(lambda dt: App.get_running_app()._keyboard_init())
         super(ConsoleInput,self).on_focus(value, *kwargs)
 
-#    def on_text_validate(self, value, *kwargs):
-#        super(ConsoleInput,self).on_text_validate(value, *kwargs)
-#        Clock.schedule_once(lambda dt: self.text.set(''))
- 
-
-#         text = self.text
-#         Clock.schedule_once(lambda dt: self.text.set(text))
-#         Clock.schedule_once(lambda dt: self.select_all())        
-#         return super(ConsoleInput,self).on_text_validate(value, *kwargs)
+    def _key_down(self, key, repeat=False):
+        return super(ConsoleInput,self)._key_down(key, repeat)
+        #4 history processing
