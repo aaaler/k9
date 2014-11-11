@@ -100,7 +100,7 @@ class RootLayout(FloatLayout):
         pilot.send ("TRACKS 0 0")
 
     def SetServo1 (self, smth=""): 
-        pilot.send ("SERVO 1 %0d" % self.servo1.value)
+        pilot.send ("SERVO 1 %0d" % (180 - int(self.servo1.value)))
 #        self.servo1label.text = "Head ^%03dv" % self.servo1.value
 
     def SetServo2 (self, smth=""): 
