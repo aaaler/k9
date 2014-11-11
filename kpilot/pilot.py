@@ -28,7 +28,7 @@ def udpreader (dummy1 = "", dummy2=""):
            return True
         if data[0:3] == "\x00\x00\x01".decode('string_escape') : 
            rec = logging.makeLogRecord(cPickle.loads(data[4:]))
-           rec.msg = unicode(rec.msg, 'utf-8')
+           rec.msg = unicode(rec.msg.encode('string_escape'), 'utf-8')
            log.handle(rec)
            return True
         elif data[0] == "#" : 
