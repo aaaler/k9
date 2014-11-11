@@ -39,7 +39,6 @@ class pwmpin(object):
     def _setpulse (self):
         kpinid = self._kpinid
         iopath='/sys/class/soft_pwm/pwm' + str(kpinid)
-        print iopath
         if os.path.exists(iopath):
             f = open(iopath + '/pulse','w')
             f.write(str(self._pulse))
