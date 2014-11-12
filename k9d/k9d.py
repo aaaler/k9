@@ -18,6 +18,8 @@ from gpio.pwmpin import pwmpin
 from gpio.pin import pin
 from gpio.servo import servo
 
+from tracks import Tracks
+
 class K9dApp:
     #Compile RE for iwconfig ouput parsing
     brre = re.compile (r"Bit Rate=([\d.]+ \S+)",re.M)
@@ -32,6 +34,7 @@ class K9dApp:
         self.p2PWM=str(5)
         self.p2FWD=str(4)
         self.p2REV=str(3)
+        self.tracks = Tracks (pin.port.PB5, pin.port.PB6, 28, pin.port.PB7, pin.port.PB10, 29, 20)
         #ip
         self.addr = "192.168.0.22"
         self.UDP_IP = "0.0.0.0"
@@ -41,14 +44,10 @@ class K9dApp:
         self.sonarfailsafe = 0.
         #mjpg_streamer related
         self.videomode = 'OFF'
-        #track calibration should be here
-        self.cal_track_min = 180
        
         #init
         self.faststate = {}
         self.faststate["proxalert"] = False
-        self.tracktimeout = time.time()
-        self.trackmode = ""
         self.sonardist = 0
         self.sonarfailsafe_active = False
         self.festivalup = False
@@ -136,16 +135,21 @@ class K9dApp:
             CMD = request.pop(0) 
             CMD = CMD.strip("\n")
             if CMD == "STOP":
-              self.trackstop()
-              out += "OK"
+              self.tracks.neutral()
+              self.faststate['trackr'] = self.tracks.trackr
+              self.faststate['trackl'] = self.tracks.trackl
+              self.stateupload()
+              self.log.debug ("Tracks vector set to neutral")
             elif CMD == "EXEC":
               self.spinal_write (' '.join(request))
-              out += "OK"
             elif CMD == "TRACKS":
-              out += self.tracks(request[0],request[1]);
+              self.tracks.vector (request[0],request[1]);
+              self.log.debug ("Tracks vector set to {},{}".format(request[0],request[1]))
+              self.faststate['trackr'] = self.tracks.trackr
+              self.faststate['trackl'] = self.tracks.trackl
+              self.stateupload()
             elif CMD == "SERVO":
               self.servo (request[0],request[1]);
-              out += "OK"
             elif CMD == "SON":
               if request[0] == 'Failsafe':
                 self.sonaron = True
@@ -154,7 +158,6 @@ class K9dApp:
               elif request[0] == 'Sonar' and request[1] == 'off' :
                 self.sonaron = False
                 self.sonarfailsafe = 0
-              out += "OK"
             elif CMD == "CAM":
               if request[0] == 'RES':
                 if hasattr(self, 'pmjpg'):
@@ -163,24 +166,22 @@ class K9dApp:
                     self.videomode = "OFF"
                     t = threading.Timer(2.0,self.run_mjpg,[request[1]])
                     t.start() 
-                    out += " deffered mjpg run"
+                    self.log.info ("Killed mjpg and deferred run with {}".format(request[1]))
                   else: 
-                    out += self.run_mjpg(request[1])
+                    self.run_mjpg(request[1])
                 else: 
-                  out += self.run_mjpg(request[1])
+                  self.run_mjpg(request[1])
               elif request[0] == 'OFF':
                 if hasattr(self, 'pmjpg') and self.pmjpg.poll() == None:
                     self.pmjpg.kill()
-                self.videomode = "OFF"
-                out += "OK"
-  
+                self.videomode = "OFF" 
+                self.log.info ("Killed mjpg.")                
               elif request[0] == 'ZOOM' and request[1] == 'OFF' :
                 status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=1"])  
-                out += "OK"
-  
+                self.log.info ("Zoom OFF")
               elif request[0] == 'ZOOM' and request[1] == 'ON' :
                 status = subprocess.call(["/usr/bin/v4l2-ctl", "--set-ctrl=zoom_absolute=5"])
-                out += "OK"
+                self.log.info ("Zoom ON")
             elif CMD == "FESTIVAL":
                 if request[0] == 'ON':
                     if hasattr(self, 'pfestival'):
@@ -189,16 +190,16 @@ class K9dApp:
                             self.festivalup = False
                             t = threading.Timer(2.0,self.run_festival)
                             t.start() 
-                            out += " deffered pfestival run"
+                            self.log.info ("Killed festival and deferred run")
                         else: 
-                            out += self.run_festival()
+                            self.run_festival()
                     else: 
-                        out += self.run_festival()
+                        self.run_festival()
                 elif request[0] == 'OFF':
                     if hasattr(self, 'pfestival') and self.pfestival.poll() == None:
                         self.pfestival.kill()
                     self.festivalup = False
-
+                    self.log.info ("Killed festival")
             elif CMD == "SAY":
                 tts = cPickle.loads(data[4:])
                 if self.festivalup:
@@ -219,7 +220,7 @@ class K9dApp:
               self.log.warn ("unknown command " + CMD + "")
               continue
            
-            self.log.debug (out)
+            
         #  send ("command done:" + out, addr);
 
             
@@ -334,7 +335,7 @@ class K9dApp:
                     self.sonarfailsafe_active = True
                     self.faststate["proxalert"] = True
                     self.log.info ("Sonar failsafe activated at distance {} meters".format(float(self.sonardist)/1000))
-                if self.tracksy > 0: self.tracks (self.tracksx,0)
+                if self.tracks.vectory > 0: self.tracks.brake ()
               else: 
                 if self.sonarfailsafe_active:
                     self.log.info ("Sonar failsafe deactivated at distance {} meters".format(float(self.sonardist)/1000))
@@ -372,54 +373,17 @@ class K9dApp:
     
     def cmdtimeout(self):
         """stop tracks when command is timed out"""
-        while 1:
-          while self.trackmode != "":
-            if self.tracktimeout < time.time():
-              self.trackstop()
-              self.log.info ("Timout alert STOP.")
-          time.sleep(0.1)
+        pass
+# TODO: Totally rewrite da shit
+#        while 1:
+#          while self.trackmode != "":
+#            if self.tracktimeout < time.time():
+#              self.tracks.stop()
+#              self.log.info ("Timout alert STOP.")
+#          time.sleep(0.1)
 
 
-
-
-
-    def tracks (self,X,Y) :
-      fX = float(X);
-      fY = float(Y);
-      timeout = 100 #not impl.
-      self.tracktimeout = time.time() + (int(timeout)/1000)
-      if fY >= 0:
-        #8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;
-        self.trackl = fY + fX
-        self.trackr = fY - fX
-    #    out="8 %0d %0d %0d %0d %0d %0d;" % (1,0,abs(int(Y)),1,0,abs(int(Y)))
-      elif fY < 0:
-        self.trackl = fY + fX
-        self.trackr = fY - fX
-      if self.trackr > 1: self.trackr = 1
-      if self.trackl > 1: self.trackl = 1
-      if self.trackr < -1: self.trackr = -1
-      if self.trackl < -1: self.trackl = -1
-      if self.sonarfailsafe_active:
-          if self.trackr > 0: self.trackr = 0
-          if self.trackl > 0: self.trackl = 0
-        
-      out="8 %0d %0d %0d %0d %0d %0d;" % (self.trackl>0,self.trackl<0,abs(self.trackr)*(255-self.cal_track_min)+self.cal_track_min,self.trackr>0,self.trackr<0,abs(self.trackl)*(255-self.cal_track_min)+self.cal_track_min)
-      self.spinal_write(out);
-      self.faststate['trackr'] = self.trackr;
-      self.faststate['trackl'] = self.trackl;
-      self.tracksx = fX
-      self.tracksy = fY
-      return "OK"
-    
- 
-    
-    def trackstop (self) :
-        self.spinal_write("2 "+self.p1PWM+" 0;")
-        self.spinal_write("2 "+self/p2PWM+" 0;")
-        self.trackmode = ""
-    
-    
+  
     def servo (self,id,angle):
         self.spinal_write("4 "+str(id)+" "+str(angle)+";")
     
@@ -434,7 +398,7 @@ class K9dApp:
         else:
           self.log.error ("Failed to start mjpg_streamer with {}".format(self.videomode))
           self.videomode = "Failed"
-        return "OK" 
+        
 
     def run_festival (self):
         out = ''

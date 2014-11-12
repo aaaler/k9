@@ -86,5 +86,6 @@ class pwmpin(object):
     def duty (self, duty):
         self._duty = duty
         self._pulse = int((duty / 100.) * self._period  )
+        if self._pulse == self._period : self._pulse -= 1 # dirty fix for softpwm 100% bug
         self._setpulse()
 

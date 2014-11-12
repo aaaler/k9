@@ -4,7 +4,7 @@ import os
 from munin import MuninPlugin
 
 class LoadAVGPlugin(MuninPlugin):
-    title = "Battery voltage"
+    title = "Power supply voltage"
     args = "--base 1000 -l 0"
     vlabel = "mA"
     scale = False
