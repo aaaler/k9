@@ -92,6 +92,9 @@ class RootLayout(FloatLayout):
                 self.log.info (u"{} = {}".format(cmd, output))
             except Exception, e:
                 self.log.error(u"eval \"{}\" raised {} Exception: {}".format(cmd,type(e).__name__ ,e))
+        elif cmd == '??' or cmd == 'reval':
+            pkt = ' '.join(request)
+            pilot.send ("EVAL {}".format(pkt))
 
         else:
             self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))

@@ -23,7 +23,7 @@ class ConsoleLog(BoxLayout):
         self.records = []
         self.streampos = 0
         self.maxrec = 40
-        self.decaytime = 300
+        self.decaytime = 60
         self.orientation = 'vertical'
 #        Clock.schedule_interval(self.refresh, 5)
         super(ConsoleLog, self).__init__(**kwargs)
@@ -37,9 +37,9 @@ class ConsoleLog(BoxLayout):
         elif line.find('WARN') > 0:
            color = "EEEE99"
         elif line.find('ERROR') > 0:
-           color = "FFAAAA"
+           color = "FF3300"
         elif line.find('CRIT') > 0:
-           color = "FFAAAA"
+           color = "FF3300"
         else:
            color = "FFFFFF"
         line = u"[color={}]{}[/color]".format(color,line)
