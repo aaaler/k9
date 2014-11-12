@@ -84,8 +84,12 @@ class RootLayout(FloatLayout):
             pkt = ' '.join(request)
             pilot.send (pkt)
             self.log.info (u"Sent: {}".format(pkt))
-        elif cmd == '?':
-            self.log.info (u"{} = {}".format(request[0], eval("pprint.pformat({})".format(request[0])) ))
+        elif cmd == '?' or cmd == 'eval':
+            try:
+                output = eval("pprint.pformat({})".format(" ".join(request)))
+                self.log.info (u"{} = {}".format(request[0], output))
+            except Exception, e:
+                self.log.error(u"{} raised Exception: {}".format(request[0], e))
 
         else:
             self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))
@@ -195,7 +199,7 @@ class kPilotApp(App):
         #init logger
         self.mainform.logstream = self.mainform.console_log.initstream()
         self.mainform.logstreamhandler = logging.StreamHandler(self.mainform.logstream)
-        self.mainform.logstreamhandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s","%H:%M:%S"))
+        self.mainform.logstreamhandler.setFormatter(logging.Formatter("%(asctime)s.%(msecs)d [%(name)s#%(levelname)s]: %(message)s","%H:%M:%S"))
         self.mainform.logstreamhandler.setLevel(logging.INFO)
         self.mainform.consoleloghandler = logging.StreamHandler(sys.stdout)
         self.mainform.consoleloghandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s"))
