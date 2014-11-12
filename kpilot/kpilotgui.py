@@ -90,7 +90,6 @@ class RootLayout(FloatLayout):
         else:
             self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))
 
-        self.console_input.text = ''
         return True
 
     def TracksMove (self, pos, *args):
