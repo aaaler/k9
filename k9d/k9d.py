@@ -12,6 +12,8 @@ import re
 import logging
 import logging.handlers
 import psutil
+import pprint
+
 from gpio.pwmpin import pwmpin
 from gpio.pin import pin
 from gpio.servo import servo
@@ -205,7 +207,14 @@ class K9dApp:
                     self.log.info ("Pronouncing '{}'".format(tts.encode("utf-8")))
                 else:
                     self.log.err ("Can't SAY, festival down")
-  
+            elif CMD == 'EVAL':
+                ecmd = " ".join(request)
+                try:
+                    output = eval("pprint.pformat({})".format(ecmd))
+                    self.log.info ("{} = {}".format(ecmd, output))
+                except Exception, e:
+                    self.log.error("eval \"{}\" raised {} Exception: {}".format(ecmd,type(e).__name__ ,e))
+
             else: 
               self.log.warn ("unknown command " + CMD + "")
               continue
