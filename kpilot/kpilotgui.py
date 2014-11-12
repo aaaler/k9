@@ -19,6 +19,7 @@ from kivy.graphics import Color, Ellipse, Line , Rectangle, Point, GraphicExcept
 from kivy.config import Config
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
+from kivy.logger import Logger as KivyLogger
 
 import pilot
 from uix.joystick import Joystick
@@ -85,11 +86,12 @@ class RootLayout(FloatLayout):
             pilot.send (pkt)
             self.log.info (u"Sent: {}".format(pkt))
         elif cmd == '?' or cmd == 'eval':
+            cmd = " ".join(request)
             try:
-                output = eval("pprint.pformat({})".format(" ".join(request)))
-                self.log.info (u"{} = {}".format(request[0], output))
+                output = eval("pprint.pformat({})".format(cmd))
+                self.log.info (u"{} = {}".format(cmd, output))
             except Exception, e:
-                self.log.error(u"{} raised Exception: {}".format(request[0], e))
+                self.log.error(u"eval \"{}\" raised {} Exception: {}".format(cmd,type(e).__name__ ,e))
 
         else:
             self.log.info (u"Unknown command '{}'".format(cmd.encode('unicode_escape')))
