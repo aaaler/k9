@@ -37,9 +37,12 @@ class Tracks(object):
 
             if fY > 0:
             #8 <LFWD> <LREV> <LPWM> <RFWD> <RREV> <RPWM>;
-                trackl = fY - fX
-                trackr = fY + fX
-            elif fY <= 0:
+                trackl = fY + (fX*fY)
+                trackr = fY + (fX*fY)
+            elif fY < 0:
+                trackl = fY - (fX*fY)
+                trackr = fY - (fX*fY)
+            elif fY == 0:
                 trackl = fY + fX
                 trackr = fY - fX
             if trackr > 1: trackr = 1
@@ -47,24 +50,27 @@ class Tracks(object):
             if trackr < -1: trackr = -1
             if trackl < -1: trackl = -1
             if self.fwd_obstacle_failsafe:
-              if trackr > 0: trackr = 0
-              if trackl > 0: trackl = 0
+                if trackr > 0: trackr = 0
+                if trackl > 0: trackl = 0
          
         #        out="8 %0d %0d %0d %0d %0d %0d;" % (self.trackl>0,self.trackl<0,abs(self.trackr)*(255-self.cal_track_min)+self.cal_track_min,self.trackr>0,self.trackr<0,abs(self.trackl)*(255-self.cal_track_min)+self.cal_track_min)
-
-            self._1a.value = (trackr > 0)
-            self._1b.value = (trackr < 0)
-            self._2a.value = (trackl > 0)
-            self._2b.value = (trackl < 0)      
-            self._1pwm.duty = abs(trackl)*(100-self.cal_min)+self.cal_min
-            self._2pwm.duty = abs(trackr)*(100-self.cal_min)+self.cal_min
-
+            self.set(trackl, trackr)
+            
         self.trackl = trackl
         self.trackr = trackr
         self.vectorx = fX
         self.vectory = fY
         return True
-    
+
+    def set (self,  trackl = self.trackl, trackr = self.trackr):
+        self._1a.value = (trackr > 0)
+        self._1b.value = (trackr < 0)
+        self._2a.value = (trackl > 0)
+        self._2b.value = (trackl < 0)      
+        self._1pwm.duty = abs(trackl)*(100-self.cal_min)+self.cal_min
+        self._2pwm.duty = abs(trackr)*(100-self.cal_min)+self.cal_min
+        
+        
     def stop (self):
         if self.stoptimer:
             self.stoptimer.cancel()
