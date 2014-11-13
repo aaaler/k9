@@ -156,11 +156,12 @@ class K9dApp:
               if request[0] == 'RES':
                 if hasattr(self, 'pmjpg'):
                   if self.pmjpg.poll() == None:
+                    pid = self.pmjpg.pid
                     self.pmjpg.kill()
                     self.videomode = "OFF"
                     t = threading.Timer(2.0,self.run_mjpg,[request[1]])
                     t.start() 
-                    self.log.info ("Killed mjpg and deferred run with {}".format(request[1]))
+                    self.log.info ("Killed mjpg with pid {} and deferred run with {}".format(pid,request[1]))
                   else: 
                     self.run_mjpg(request[1])
                 else: 
@@ -180,11 +181,12 @@ class K9dApp:
                 if request[0] == 'ON':
                     if hasattr(self, 'pfestival'):
                         if self.pfestival.poll() == None:
+                            pid = self.pfestival.pid
                             self.pfestival.kill()
                             self.festivalup = False
                             t = threading.Timer(2.0,self.run_festival)
                             t.start() 
-                            self.log.info ("Killed festival and deferred run")
+                            self.log.info ("Killed festival with pid {} and deferred run".format(pid))
                         else: 
                             self.run_festival()
                     else: 
