@@ -28,12 +28,6 @@ class K9dApp:
     def __init__ (self):
         #Kind a config here
         #arduino tracks bridge pinout
-        self.p1PWM=str(6)
-        self.p1FWD=str(7)
-        self.p1REV=str(8)
-        self.p2PWM=str(5)
-        self.p2FWD=str(4)
-        self.p2REV=str(3)
         self.tracks = Tracks (pin.port.PB5, pin.port.PB6, 28, pin.port.PB7, pin.port.PB10, 29, 20)
         #ip
         self.addr = "192.168.0.22"
@@ -254,7 +248,7 @@ class K9dApp:
         return ((int(byteval)&(1<<int(idx)))!=0);
     
     def parsestate(self, stat):
-        statusdebug = "";
+#        statusdebug = "";
         b = 0
         for i in range (2,11):
           if i in [5,6]: 
@@ -263,16 +257,16 @@ class K9dApp:
           bit = self.getbit(ord(stat[0]),b)
           b +=1
           self.faststate['D'+str(i)]=bit
-          statusdebug += (str(i) + ":" + str(int(bit)) + " ")
-        statusdebug += ("s1:" + str(ord(stat[1])) + " ")
+#          statusdebug += (str(i) + ":" + str(int(bit)) + " ")
+#        statusdebug += ("s1:" + str(ord(stat[1])) + " ")
         self.faststate['S1']=ord(stat[1])
-        statusdebug += ("s2:" + str(ord(stat[2])) + " ") 
+#        statusdebug += ("s2:" + str(ord(stat[2])) + " ") 
         self.faststate['S2']=ord(stat[2])
-        statusdebug += ("a1:" + str(ord(stat[4]) + (ord(stat[3])<<8)) + " ")
+#        statusdebug += ("a1:" + str(ord(stat[4]) + (ord(stat[3])<<8)) + " ")
         self.faststate['A1']=str(ord(stat[4]) + (ord(stat[3])<<8))
-        statusdebug += ("a2:" + str(ord(stat[6]) + (ord(stat[5])<<8)) + " ")
+#        statusdebug += ("a2:" + str(ord(stat[6]) + (ord(stat[5])<<8)) + " ")
         self.faststate['A2']=str(ord(stat[6]) + (ord(stat[5])<<8))
-        statusdebug += ("a3:" + str(ord(stat[8]) + (ord(stat[7])<<8)) + "")
+#        statusdebug += ("a3:" + str(ord(stat[8]) + (ord(stat[7])<<8)) + "")
         self.faststate['A3']=str(ord(stat[8]) + (ord(stat[7])<<8))
 #        self.log.debug (statusdebug);
         self.stateupload()
