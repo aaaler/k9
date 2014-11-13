@@ -341,11 +341,12 @@ class K9dApp:
             except serial.SerialException:
                 self.faststate["Son"]=65535
                 self.log.info ("Sonar err")
+
           else:self.faststate["Son"]=65534
           inlen = self.sonar.inWaiting()
           if inlen > 0: 
               data = self.sonar.read(inlen)
-              self.log.warn ("Discarded  {} packets from sonar: {:02x}".format(inlen, data))
+              self.log.warn ("Discarded  {} packets from sonar: {}".format(inlen, data))
           time.sleep(.05)
           
     
