@@ -321,28 +321,31 @@ class K9dApp:
           if self.sonaron:
             self.sonar.write("U")
             try:
-              HighLen = ord(self.sonar.read(1));                   #High byte of distance
-              LowLen  = ord(self.sonar.read(1));                   #Low byte of distance
-              self.sonardist  = int(HighLen*256 + LowLen);             #Calculate the distance
-    #        print ("SONAR H:"+ str( sonardist))
-              self.faststate["Son"]=self.sonardist
-              if float(self.sonardist)/1000 <= self.sonarfailsafe:
-                if not self.sonarfailsafe_active:
-                    self.sonarfailsafe_active = True
-                    self.faststate["proxalert"] = True
-                    self.log.info ("Sonar failsafe activated at distance {} meters".format(float(self.sonardist)/1000))
-                if self.tracks.vectory > 0: self.tracks.brake ()
-              else: 
-                if self.sonarfailsafe_active:
-                    self.log.info ("Sonar failsafe deactivated at distance {} meters".format(float(self.sonardist)/1000))
-                    self.sonarfailsafe_active = False
-                    self.faststate["proxalert"] = False
+                HighLen = ord(self.sonar.read(1));                   #High byte of distance
+                LowLen  = ord(self.sonar.read(1));                   #Low byte of distance
+                self.sonardist  = int(HighLen*256 + LowLen);             #Calculate the distance
+      #        print ("SONAR H:"+ str( sonardist))
+                self.faststate["Son"]=self.sonardist
+                if float(self.sonardist)/1000 <= self.sonarfailsafe:
+                  if not self.sonarfailsafe_active:
+                      self.sonarfailsafe_active = True
+                      self.faststate["proxalert"] = True
+                      self.log.info ("Sonar failsafe activated at distance {} meters".format(float(self.sonardist)/1000))
+                  if self.tracks.vectory > 0: self.tracks.brake ()
+                else: 
+                  if self.sonarfailsafe_active:
+                      self.log.info ("Sonar failsafe deactivated at distance {} meters".format(float(self.sonardist)/1000))
+                      self.sonarfailsafe_active = False
+                      self.faststate["proxalert"] = False
  
             except serial.SerialException:
-              self.faststate["Son"]=65535
-              self.log.info ("Sonar err")
-              pass
+                self.faststate["Son"]=65535
+                self.log.info ("Sonar err")
           else:self.faststate["Son"]=65534
+          inlen = self.sonar.inWaiting()
+          if inlen > 0: 
+              data = self.sonar.read(inlen)
+              self.log.warn ("Discarded  {} packets from sonar: {:02x}".format(inlen, data))
           time.sleep(.05)
           
     
