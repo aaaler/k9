@@ -26,7 +26,7 @@ def udpreader (dummy1 = "", dummy2=""):
            return True
         if data[0:13] == "UART<OK SERVO" : 
            return True
-        if data[0:3] == "\x00\x00\x01".decode('string_escape') : 
+        if data[0:2] == "\x00\x00".decode('string_escape') : 
            rec = logging.makeLogRecord(cPickle.loads(data[4:]))
            rec.msg = unicode(rec.msg.encode('string_escape'), 'utf-8')
            log.handle(rec)
