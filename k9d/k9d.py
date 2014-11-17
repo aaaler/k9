@@ -19,6 +19,7 @@ from gpio.pin import pin
 from gpio.servo import servo
 
 from tracks import Tracks
+from gsens import GSens
 
 class K9dApp:
     #Compile RE for iwconfig ouput parsing
@@ -93,17 +94,33 @@ class K9dApp:
             self.tSonar = threading.Thread(target=self.tsonar)
             self.tSonar.setDaemon (1)
             self.tSonar.start()
-            
+
+        self.gsens = GSens (0, self.gsens_update, self.log.error, self.log.info, self.log.debug)
         
         self.log.info ("ready to play");
+
+    def __del__ (self):
+        self.log.info("Shutting down daemon")
+        self.gsens.__del__()
+        self.gsens = None
+        
+    def gsens_update (self):
+        self.faststate['yaw'] = self.gsens.yaw
+        self.faststate['pitch'] = self.gsens.pitch
+        self.faststate['roll'] = self.gsens.roll
+        self.faststate['ax'] = self.gsens.ax
+        self.faststate['ay'] = self.gsens.ay
+        self.faststate['az'] = self.gsens.az
+        self.stateupload()
 
     def log_init(self):
          
         if hasattr(self, 'log'):
             self.log.removeHandler(self.stdoutloghandler)
             self.log.removeHandler(self.udploghandler)
-	else:
+    	else:
             self.log = logging.getLogger('k9d')
+
         self.stdoutloghandler = logging.StreamHandler(sys.stdout)
         self.stdoutloghandler.setFormatter(logging.Formatter("%(asctime)s [%(name)s#%(levelname)s]: %(message)s"))
         self.stdoutloghandler.setLevel(logging.DEBUG)
@@ -419,8 +436,13 @@ class K9dApp:
         
 
 if __name__ == "__main__":
+
     app = K9dApp()
-    app.mainloop()
+    try:
+        app.mainloop()
+    except KeyboardInterrupt:
+        app.__del__()
+        sys.exit(0)
         
     
     

@@ -9,7 +9,7 @@ from gpio.pin import pin
 
 class GSens (object):
 # Sensor initialization
-    def __init__ (self, i2cdev = 0, cb_update = None, cb_error = None, cb_info = None, cb_debug = None)
+    def __init__ (self, i2cdev = 0, cb_update = None, cb_error = None, cb_info = None, cb_debug = None):
         #turn on power with gpio
         self.power = pin(pin.port.PI0)
         self.power.on()
@@ -42,14 +42,19 @@ class GSens (object):
         self.readThread = threading.Thread(target=self.readcycle)
         self.readThread.setDaemon (1)
         self.readThread.start()
+
         self.info ("Calibrating G-Sensor")
 
+    def __del__ (self):
+        self.power.off()
+        
+
     def debug (self, msg):
-        if callable(self.cb_debug): self.cb_debug("msg")
+        if callable(self.cb_debug): self.cb_debug(msg)
     def info (self, msg):
-        if callable(self.cb_info): self.cb_info("msg")
+        if callable(self.cb_info): self.cb_info(msg)
     def error (self, msg):
-        if callable(self.cb_error): self.cb_error("msg")
+        if callable(self.cb_error): self.cb_error(msg)
 
     def ftoip(self,v):
         return int(self.precision * v)
@@ -62,7 +67,7 @@ class GSens (object):
                 return False
         return True
     def updatefifoCount(self):
-        self.fifoCount = mpu.getFIFOCount()
+        self.fifoCount = self.mpu.getFIFOCount()
 
 
     def getPkt(self):
@@ -71,7 +76,7 @@ class GSens (object):
         while self.fifoCount < self.packetSize:
             self.updatefifoCount()
 
-        result = mpu.getFIFOBytes(packetSize)
+        result = mpu.getFIFOBytes(self.packetSize)
         q = mpu.dmpGetQuaternion(result)
         g = mpu.dmpGetGravity(q)
         self.ypr = mpu.dmpGetYawPitchRoll(q, g)
@@ -79,35 +84,42 @@ class GSens (object):
         la = mpu.dmpGetLinearAccel(a, g)
         self.laiw = mpu.dmpGetLinearAccelInWorld(a, q)
 
-        self.yaw = ypr['yaw'] * 180 / math.pi  # radians to degrees
-        self.pitch = ypr['pitch'] * 180 / math.pi
-        self.roll = ypr['roll'] * 180 / math.pi
-        self.ax = laiw['x'] * 9.8
-        self.ay = laiw['y'] * 9.8
-        self.az = laiw['z'] * 9.8
+        yaw = self.ypr['yaw'] * 180 / math.pi  # radians to degrees
+        pitch = self.ypr['pitch'] * 180 / math.pi
+        roll = self.ypr['roll'] * 180 / math.pi
+        ax = self.laiw['x'] * 9.8
+        ay = self.laiw['y'] * 9.8
+        az = self.laiw['z'] * 9.8
         # Update timedelta
-        self.dt = time.time() - t0
+#        self.dt = time.time() - t0
+        self.yaw   = yaw  
+        self.pitch = pitch
+        self.roll  = roll 
+        self.ax    = ax   
+        self.ay    = ay   
+        self.az    = az   
+
 
         if self.calibrating:
-            if equal(
+            if self.equal(
                     [yaw, pitch, roll, ax, ay, az, ],
-                    [yaw0, pitch0, roll0, ax0, ay0, az0, ]
+                    [self.yaw0, self.pitch0, self.roll0, self.ax0, self.ay0, self.az0, ]
             ):
                 self.calibrating = False
                 self.calibration_time = self.start_time - time.time()
                 self.info ("Calibration complete in {:.2f} seconds.".format(self.calibration_time))
             else:
-                self.yaw0 = self.yaw
-                self.pitch0 = self.pitch
-                self.roll0 = self.roll
-                self.ax0 = self.ax
-                self.ay0 = self.ay
-                self.az0 = self.az
+                self.yaw0 = yaw
+                self.pitch0 = pitch
+                self.roll0 = roll
+                self.ax0 = ax
+                self.ay0 = ay
+                self.az0 = az
                 #print(
                 #    "Calibrating: dt:{: 8f} y:{: 4d} p:{: 4d} r:{: 4d} x:{: 4d} y:{: 4d} z:{: 4d} buf:{:4d}".format(dt, ftoip(yaw), ftoip(pitch), ftoip(roll), ftoip(ax), ftoip(ay), ftoip(az),fifoCount)
                 #)
-    else:
-        pass
+        else:
+            pass
 #        print ("dt:{: 8f} y:{: 4d} p:{: 4d} r:{: 4d} x:{: 4d} y:{: 4d} z:{: 4d}  buf:{:4d}".format(dt, ftoip(yaw), ftoip(pitch), ftoip(roll), ftoip(ax), ftoip(ay), ftoip(az),fifoCount ))
 
 

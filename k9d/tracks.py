@@ -19,7 +19,9 @@ class Tracks(object):
         self.stoptimer = None
         self.vectorx = 0. 
         self.vectory = 0.
-
+    
+    def __del__ (self):
+        self.neutral()
 
     def vector (self,X,Y) :
         fX = float(X);
