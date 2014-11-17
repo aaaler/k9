@@ -134,8 +134,13 @@ class K9dApp:
               self.faststate['trackl'] = self.tracks.trackl
               self.stateupload()
               self.log.debug ("Tracks vector set to neutral")
-            elif CMD == "EXEC":
-              self.spinal_write (' '.join(request))
+            elif CMD == "SPINAL":
+              emsg = ' '.join(request)
+              self.log.info ("Sending user packet to spinal: {}".format(emsg))
+              self.spinal_write (emsg)
+            elif CMD == "PING":
+              self.log.info ("PING {} got".format(request[0]))
+              self.send ("PONG {} {}".format(time.time(),request[0]),self.addr)
             elif CMD == "TRACKS":
               self.tracks.vector (request[0],request[1]);
               self.log.debug ("Tracks vector set to {},{}".format(request[0],request[1]))
