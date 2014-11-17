@@ -12,7 +12,7 @@ rotspeed = 130
 timeout = "1000"
 stats = {}
 statsdtime = 0;
-laststatstime = time.time();
+laststatstime = time.time()
 
 
 def udpreader (dummy1 = "", dummy2=""):
