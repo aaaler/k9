@@ -103,7 +103,7 @@ class K9dApp:
         self.log.info("Shutting down daemon")
         self.gsens.__del__()
         self.gsens = None
-        
+
     def gsens_update (self):
         self.faststate['yaw'] = self.gsens.yaw
         self.faststate['pitch'] = self.gsens.pitch
