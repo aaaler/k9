@@ -155,8 +155,8 @@ class RootLayout(FloatLayout):
             self.label1.text += "CPU Use: {}\n".format(pilot.stats['cpu'])
             self.label1.text += "UL: {:.2f} DL: {:.2f}\n".format(pilot.stats['ul'],pilot.stats['dl'])
 
-
-            self.statslabel.text = "L: {:+.2f} R: {:+.2f}".format(pilot.stats['trackr'], pilot.stats['trackl'])
+#        print ("dt:{: 8f} y:{: 4d} p:{: 4d} r:{: 4d} x:{: 4d} y:{: 4d} z:{: 4d}  buf:{:4d}".format(dt, ftoip(yaw), ftoip(pitch), ftoip(roll), ftoip(ax), ftoip(ay), ftoip(az),fifoCount ))
+            self.statslabel.text = "G-Sensor y:{: 6.4f} p:{: 8.4f} r:{: 8.4f} x:{: 8.4f} y:{: 8.4f} z:{: 8.4f}  Tracks L: {:+.2f} R: {:+.2f}".format(pilot.stats['yaw'], pilot.stats['pitch'], pilot.stats['roll'], pilot.stats['ax'], pilot.stats['ay'], pilot.stats['az'],pilot.stats['trackr'], pilot.stats['trackl'])
             self.servo1label.text = "Head ^%03dv" % int(pilot.stats['S1'])
             self.servo2label.text = "Head <%03d>" % int(pilot.stats['S2'])
 #            self.servo1.value = int(pilot.stats['S1'])
