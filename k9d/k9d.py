@@ -95,7 +95,6 @@ class K9dApp:
             self.tSonar.setDaemon (1)
             self.tSonar.start()
 
-        self.gsens = GSens (0, self.gsens_update, self.log.error, self.log.info, self.log.debug)
         
         self.log.info ("ready to play");
 
@@ -105,13 +104,14 @@ class K9dApp:
         self.gsens = None
 
     def gsens_update (self):
-        self.faststate['yaw'] = self.gsens.yaw
-        self.faststate['pitch'] = self.gsens.pitch
-        self.faststate['roll'] = self.gsens.roll
-        self.faststate['ax'] = self.gsens.ax
-        self.faststate['ay'] = self.gsens.ay
-        self.faststate['az'] = self.gsens.az
-        self.stateupload()
+        if hasattr(self.gsens,'yaw'):
+            self.faststate['yaw'] = self.gsens.yaw
+            self.faststate['pitch'] = self.gsens.pitch
+            self.faststate['roll'] = self.gsens.roll
+            self.faststate['ax'] = self.gsens.ax
+            self.faststate['ay'] = self.gsens.ay
+            self.faststate['az'] = self.gsens.az
+            self.stateupload()
 
     def log_init(self):
          
@@ -233,6 +233,13 @@ class K9dApp:
                     self.log.info ("{} = {}".format(ecmd, output))
                 except Exception, e:
                     self.log.error("eval \"{}\" raised {} Exception: {}".format(ecmd,type(e).__name__ ,e))
+
+            elif CMD == "GSENSOR":
+                if request[0] == 'ON':
+                    self.gsens = GSens (0, self.gsens_update, self.log.error, self.log.info, self.log.debug)
+                elif request[0] == 'OFF':
+                    self.gsens.__del__()
+                    self.gsens = None
 
             else: 
               self.log.warn ("unknown command " + CMD + "")

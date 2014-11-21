@@ -29,6 +29,8 @@ class GSens (object):
         self.ay0 = 0
         self.az0 = 0
         self.precision = 100
+        self.samplerate = 9 #1khz / (1 + 4) = 200 Hz [9 = 100 Hz]
+        self.cycleActive = True
 
         mpu = mpu6050.MPU6050(
             address=mpu6050.MPU6050.MPU6050_DEFAULT_ADDRESS,
@@ -43,18 +45,20 @@ class GSens (object):
         self.readThread.setDaemon (1)
         self.readThread.start()
 
-        self.info ("Calibrating G-Sensor")
+        self.info ("Turned on. Calibrating.")
 
     def __del__ (self):
+        self.info ("Turned off.")
+        self.cycleActive = False
         self.power.off()
         
 
     def debug (self, msg):
-        if callable(self.cb_debug): self.cb_debug(msg)
+        if callable(self.cb_debug): self.cb_debug("[MPU] {}".format(msg))
     def info (self, msg):
-        if callable(self.cb_info): self.cb_info(msg)
+        if callable(self.cb_info): self.cb_info("[Accel-Gyro MPU] {}".format(msg))
     def error (self, msg):
-        if callable(self.cb_error): self.cb_error(msg)
+        if callable(self.cb_error): self.cb_error("[Accel-Gyro MPU] {}".format(msg))
 
     def ftoip(self,v):
         return int(self.precision * v)
@@ -107,7 +111,10 @@ class GSens (object):
             ):
                 self.calibrating = False
                 self.calibration_time = self.start_time - time.time()
+
                 self.info ("Calibration complete in {:.2f} seconds.".format(self.calibration_time))
+                self.setRate (self.samplerate)   #1khz / (1 + 4) = 200 Hz [9 = 100 Hz]
+
             else:
                 self.yaw0 = yaw
                 self.pitch0 = pitch
@@ -124,9 +131,13 @@ class GSens (object):
 
 
 
+    def setRate (self, rate):
+        self.mpu.setRate (rate)   #1khz / (1 + 4) = 200 Hz [9 = 100 Hz]
+        freq = 1000 / (1 + self.mpu.getRate())
+        self.info ("Sample rate set to {} Hz.".format(freq))
 
     def readcycle(self):
-        while True:
+        while self.cycleActive:
             # Get INT_STATUS byte
             mpuIntStatus = self.mpu.getIntStatus()
 
