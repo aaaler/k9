@@ -1,11 +1,11 @@
 #:import pilot pilot
-<Widget>:
-#   canvas.after:
-#        Line:
-#            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
-#            dash_offset: 5
-#            dash_length: 3
-
+<Renderer>:
+    canvas.after:
+        Line:
+            rectangle: self.x+1,self.y+1,self.width-1,self.height-1
+            dash_offset: 5
+            dash_length: 3
+    
 <TaintedLabel@Label>:
     canvas.before:
         Color:
@@ -151,6 +151,15 @@
                         opacity: 0.5
                         disabled: True
                         border: [0, 0, 0, 0]
+                    ToggleButton:
+                        id:bGSens
+                        size: '60sp','30sp'
+                        size_hint: (None, None)
+                        text: 'G-Sensor'                       
+                        on_press: root.gsensor_init() if self.state == 'down' else root.gsensor_stop()
+                        opacity: 0.5
+                        border: [0, 0, 0, 0]
+
 
 
                 BoxLayout:

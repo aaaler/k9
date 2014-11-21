@@ -20,6 +20,12 @@ from kivy.config import Config
 from kivy.core.window import Window
 from kivy.uix.spinner import Spinner
 from kivy.logger import Logger as KivyLogger
+from kivy.metrics import sp
+
+from kivy3 import Scene, Renderer, PerspectiveCamera
+from kivy3.loaders import OBJLoader
+
+
 
 import pilot
 from uix.joystick import Joystick
@@ -45,6 +51,7 @@ class RootLayout(FloatLayout):
     joy1 = ObjectProperty()
     bHWJ = ObjectProperty()
     
+    
 #    def on_logstream(self, *args):
 #        self.mainview_log.text = self.logstream.getvalue()
     def __init__(self, *args, **kwargs):
@@ -55,7 +62,45 @@ class RootLayout(FloatLayout):
         if pygame.joystick.get_count() > 0:
             self.bHWJ.disabled = False        
             self.log.info (u"Hardware joysticks available: {}".format(pygame.joystick.get_count()) )
-    
+
+    def gsensor_init(self):
+        self.renderer = Renderer(shader_file="3d/simple.glsl")
+        scene = Scene()
+        # load obj file
+        loader = OBJLoader()
+        obj = loader.load("3d/k9.obj")
+        self.k9obj = obj.children[0]
+
+        scene.add(*obj.children)
+        camera = PerspectiveCamera(15, 1, 1, 1000)
+
+        self.renderer.size_hint = (None,None)
+        self.renderer.pos_hint = {'right' : .99, 'y': 0.4}
+        self.renderer.render(scene, camera)
+        self.renderer.size = (300,300)
+
+        self.add_widget(self.renderer)
+        Clock.schedule_interval(self.gsensor_3d_update, 1. / 20)
+        self.renderer.bind(size=self.gsensor_3d_adjust_aspect)
+
+    def gsensor_3d_adjust_aspect(self, inst, val):
+        rsize = self.renderer.size
+        aspect = rsize[0] / float(rsize[1])
+        self.renderer.camera.aspect = aspect
+
+    def gsensor_3d_update(self,dt):
+        obj = self.k9obj
+        if obj.pos.z > -30:
+            obj.pos.z -= 0.5
+        obj.rotation.y += 0.5
+
+
+    def gsensor_stop(self):
+        self.remove_widget(self.renderer)
+        self.renderer = None
+        pass
+
+
     def hwjoystick_init (self):
         if pygame.joystick.get_count() > 0:
             hwjoystick = pygame.joystick.Joystick(0)
@@ -92,6 +137,14 @@ class RootLayout(FloatLayout):
                 self.log.info (u"{} = {}".format(cmd, output))
             except Exception, e:
                 self.log.error(u"eval \"{}\" raised {} Exception: {}".format(cmd,type(e).__name__ ,e))
+        elif cmd == '!' or cmd == 'exec':
+            cmd = " ".join(request)
+            try:
+                exec(cmd)
+                self.log.info (u"Executed: {}".format(cmd))
+            except Exception, e:
+                self.log.error(u"exec \"{}\" raised {} Exception: {}".format(cmd,type(e).__name__ ,e))
+
         elif cmd == '??' or cmd == 'reval':
             pkt = ' '.join(request)
             pilot.send ("EVAL {}".format(pkt))
