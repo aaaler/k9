@@ -97,18 +97,15 @@ class Renderer(Widget):
         Clock.schedule_once(self._update_matrices, -1)
 
     def on_size(self, instance, value):
-        self.fbo.size = self.size
+        self.fbo.size = value
         self._viewport.size = self.size
-        self._viewport.pos = self.pos
+        self._viewport.pos = value
         self._viewport.texture = self.fbo.texture
         self._update_matrices()
 
     def on_pos(self, instance, value):
-        self.fbo.size = self.size
         self._viewport.pos = self.pos
-        self._viewport.texture = self.fbo.texture
         self._update_matrices()
-
 
     def on_texture(self, instance, value):
         self._viewport.texture = value
