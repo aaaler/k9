@@ -64,6 +64,7 @@ class RootLayout(FloatLayout):
             self.log.info (u"Hardware joysticks available: {}".format(pygame.joystick.get_count()) )
 
     def gsensor_init(self):
+        pilot.send ("GSENSOR ON")
         self.renderer = Renderer(shader_file="3d/simple.glsl")
         scene = Scene()
         # load obj file
@@ -92,10 +93,11 @@ class RootLayout(FloatLayout):
         obj = self.k9obj
         if obj.pos.z > -30:
             obj.pos.z -= 0.5
-        obj.rotation.y += 0.5
+#        obj.rotation.y += 0.5
 
 
     def gsensor_stop(self):
+        pilot.send ("GSENSOR OFF")
         self.remove_widget(self.renderer)
         self.renderer = None
         pass
@@ -214,7 +216,10 @@ class RootLayout(FloatLayout):
             self.servo2label.text = "Head <%03d>" % int(pilot.stats['S2'])
 #            self.servo1.value = int(pilot.stats['S1'])
 #bad idea really, undefined behavior.
-
+            if hasattr(self,'k9obj'):
+                self.k9obj.rotation.y = pilot.stats['yaw']
+                self.k9obj.rotation.x = pilot.stats['roll']
+                self.k9obj.rotation.z = pilot.stats['pitch']
         except KeyError as e: self.statslabel.text = "not yet " + e.message
 
 #        while len(pilot.udpinmsgs) > 0 :
